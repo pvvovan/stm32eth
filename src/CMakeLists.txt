@@ -1,29 +1,30 @@
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-project(stm32f407hal NONE)
+project(stm32eth.elf NONE)
 
 set(LOCAL_SRCS "")
 set(LOCAL_HDRS "")
-
-#set(CMAKE_C_COMPILER "$ENV{CROSS_COMPILE}gcc")
 
 add_definitions(-DUSE_HAL_DRIVER)
 add_definitions(-DDEBUG)
 add_definitions(-DSTM32F407xx)
 
+set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../linker/STM32F407VGTX_FLASH.ld")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
 
 file(GLOB LOCAL_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/*.h")
-file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/Legacy/*.h")
 
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../CMSIS/core/inc")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../dev/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/hal/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc/Legacy")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../../inc")
 
-add_library(stm32f407hal ${LOCAL_SRCS} ${LOCAL_HDRS})
+set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl,--gc-sections -Wl,--start-group -Wl,-lc -Wl,-lm -Wl,--end-group")
+
+add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
+
+target_link_libraries(${PROJECT_NAME} stm32f407hal startup)
 

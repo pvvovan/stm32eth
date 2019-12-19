@@ -15,8 +15,13 @@ set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../linker/STM32F407VGTX_FLASH.ld"
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
 
-file(GLOB LOCAL_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/*.h")
+
+set(LOCAL_SRCS
+    "stm32f4xx_hal_msp.c"
+    "stm32f4xx_it.c"
+    "system_stm32f4xx.c"
+    "main.c")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")

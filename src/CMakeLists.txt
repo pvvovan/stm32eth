@@ -18,7 +18,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunctio
 file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/*.h")
 
 set(LOCAL_SRCS
-    "stm32f4xx_hal_msp.c"
     "stm32f4xx_it.c"
     "system_stm32f4xx.c"
     "main.c")
@@ -32,5 +31,5 @@ set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl
 
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
-target_link_libraries(${PROJECT_NAME} stm32f407hal startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021nrl startup)
 

@@ -1,22 +1,20 @@
 #include <stdint.h>
-#include "stm32f4xx_hal_eth.h"
-#include "ksz8021nrl.h"
-
-static ETH_HandleTypeDef h_eth;
+#include <string.h>
+#include "ksz8021rnl.h"
 
 static void ksz8021_gpio_init(ETH_HandleTypeDef *heth);
 
-int ksz8021_init(uint8_t *mac_addr)
+int ksz8021_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr)
 {
     HAL_StatusTypeDef status = HAL_ERROR;
 
-    if (mac_addr == NULL)
+    if (heth == NULL || mac_addr == NULL)
     {
         return -1;
     }
 
     status = HAL_ETH_RegisterCallback(
-                &h_eth,
+                heth,
                 HAL_ETH_MSPINIT_CB_ID,
                 ksz8021_gpio_init);
 
@@ -25,24 +23,22 @@ int ksz8021_init(uint8_t *mac_addr)
         return -1;
     }
 
-    h_eth.Instance = ETH;
-    h_eth.Init.MACAddr = mac_addr;
-    h_eth.Init.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE;
-    h_eth.Init.Speed = ETH_SPEED_100M;
-    h_eth.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
-    h_eth.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
-    h_eth.Init.RxMode = ETH_RXPOLLING_MODE;
-    h_eth.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
-    h_eth.Init.PhyAddress = PHY_ADDRESS;
+    heth->Instance = ETH;
+    heth->Init.MACAddr = mac_addr;
+    heth->Init.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE;
+    heth->Init.Speed = ETH_SPEED_100M;
+    heth->Init.DuplexMode = ETH_MODE_FULLDUPLEX;
+    heth->Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
+    heth->Init.RxMode = ETH_RXPOLLING_MODE;
+    heth->Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
+    heth->Init.PhyAddress = PHY_ADDRESS;
 
     /* configure ethernet peripheral (GPIOs, clocks, MAC, DMA) */
-    status = HAL_ETH_Init(&h_eth);
+    status = HAL_ETH_Init(heth);
     if (status != HAL_OK)
     {
         return -1;
     }
-
-    ksz8021_gpio_init();
 
     return 0;
 }
@@ -110,7 +106,7 @@ static void ksz8021_gpio_init(ETH_HandleTypeDef *heth)
     /* Enable ETHERNET clock  */
     __HAL_RCC_ETH_CLK_ENABLE();
 
-    /* Enable and set EXTI Line0 Interrupt to the lowest priority */
+    /* Enable and set EXTI Line 8 Interrupt */
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, PHY_INT_PRIO, 0);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 }

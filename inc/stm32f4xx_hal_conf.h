@@ -263,10 +263,10 @@
 #endif /* HAL_DCMI_MODULE_ENABLED */
 
 #ifdef HAL_ETH_MODULE_ENABLED
-#if defined(ETH_PHY_KSZ8021NRL)
-  #include "ksz8021nrl.h"
-#endif /* defined(ETH_PHY_KSZ8021NRL) */
   #include "stm32f4xx_hal_eth.h"
+#if defined(ETH_PHY_KSZ8021RNL)
+  #include "ksz8021rnl.h"
+#endif /* defined(ETH_PHY_KSZ8021RNL) */
 #endif /* HAL_ETH_MODULE_ENABLED */
 
 #ifdef HAL_FLASH_MODULE_ENABLED

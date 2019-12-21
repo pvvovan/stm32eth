@@ -2,7 +2,6 @@
 #define KSZ8021NRL_H
 
 #include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_gpio.h"
 
 /* ################### Ethernet PHY GPIO configuration ###################### */
 
@@ -46,18 +45,11 @@
 
 /* ################## Ethernet peripheral configuration ##################### */
 
-/* Section 1 : Ethernet peripheral configuration */
-
-/* Definition of the Ethernet driver buffers size and count */
-#define ETH_RX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for receive               */
-#define ETH_TX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for transmit              */
-#define ETH_RXBUFNB                    4U                  /* 4 Rx buffers of size ETH_RX_BUF_SIZE  */
-#define ETH_TXBUFNB                    4U                  /* 4 Tx buffers of size ETH_TX_BUF_SIZE  */
-
 /* Section 2: PHY configuration section */
 
-/* KSZ8021NRL PHY Address*/
-#define PHY_ADDRESS                     0x03U
+/* KSZ8021NRL PHY Address
+ * Note: 0 - default address after startup */
+#define PHY_ADDRESS                     0x00U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/
 #define PHY_RESET_DELAY                 0x000000FFU
 /* PHY Configuration delay */
@@ -98,5 +90,8 @@
 #define PHY_MISR_LINK_INT_EN            ((uint16_t)0x0500)  /*!< Enable Interrupt on change of link status       */
 #define PHY_LINK_INT_UP_MASK            ((uint16_t)0x0001)  /*!< PHY link status interrupt mask                  */
 #define PHY_LINK_INT_DOWN_MASK          ((uint16_t)0x0004)  /*!< PHY link status interrupt mask                  */
+
+int ksz8021_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr);
+
 #endif /* KSZ8021NRL_H */
 

@@ -10,6 +10,7 @@ add_definitions(-DHSE_VALUE=8000000U)
 add_definitions(-DUSE_HAL_DRIVER)
 add_definitions(-DDEBUG)
 add_definitions(-DSTM32F407xx)
+add_definitions(-DETH_PHY_KSZ8021RNL)
 
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../linker/STM32F407VGTX_FLASH.ld")
 
@@ -20,16 +21,18 @@ file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/*.h")
 set(LOCAL_SRCS
     "stm32f4xx_it.c"
     "system_stm32f4xx.c"
+    "ethernetif.c"
     "main.c")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/hal/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8021rnl/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 
 set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl,--gc-sections -Wl,--start-group -Wl,-lc -Wl,-lm -Wl,--end-group")
 
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
-target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021nrl startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl startup)
 

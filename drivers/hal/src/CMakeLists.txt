@@ -12,7 +12,7 @@ add_definitions(-DHSE_VALUE=8000000U)
 add_definitions(-DUSE_HAL_DRIVER)
 add_definitions(-DDEBUG)
 add_definitions(-DSTM32F407xx)
-add_definitions(-DETH_PHY_KSZ8021NRL)
+add_definitions(-DETH_PHY_KSZ8021RNL)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
 
@@ -20,7 +20,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunctio
 file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/*.h")
 file(GLOB LOCAL_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/../inc/Legacy/*.h")
 
-set(LOCAL_SRCS 
+set(LOCAL_SRCS
     "stm32f4xx_hal.c"
     "stm32f4xx_hal_cortex.c"
     "stm32f4xx_hal_crc.c"
@@ -46,6 +46,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../dev/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc/Legacy")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../../inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../../ksz8021rnl/inc")
 
 add_library(stm32f407hal ${LOCAL_SRCS} ${LOCAL_HDRS})
 

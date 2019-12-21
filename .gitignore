@@ -1,5 +1,7 @@
 **/build/*
 **/Debug/*
 **/cscope*
+.vscode/**
+**/*.code-workspace
 tags
 *.swp

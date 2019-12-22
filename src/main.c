@@ -165,6 +165,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin)
     {
         /* Get the IT status register value */
         ethernetif_set_link(&gnetif);
+
+        /* Handle timeouts */
+        sys_check_timeouts();
     }
 }
 

@@ -30,6 +30,8 @@ set(LOCAL_SRCS
     "stm32f4xx_it.c"
     "system_stm32f4xx.c"
     "ethernetif.c"
+    "syscalls.c"
+    "sysmem.c"
     "main.c")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")

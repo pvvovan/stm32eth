@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include "ksz8021rnl.h"
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
@@ -22,17 +23,10 @@ __ALIGN_BEGIN uint8_t tx_buf[ETH_TX_BUF_NUM][ETH_TX_BUF_SIZE] __ALIGN_END;
 /* Ethernet Tx DMA Descriptor */
 __ALIGN_BEGIN ETH_DMADescTypeDef  dma_tx_desc_tab[ETH_TX_BUF_NUM] __ALIGN_END;
 
-
-
-
 static void low_level_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static struct pbuf * low_level_input(struct netif *netif);
-
-
-
-
-
+__weak void ethernetif_notify_conn_changed(struct netif *netif);
 
 /**
   * @brief In this function, the hardware should be initialized.
@@ -202,7 +196,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     }
 
     /* Prepare transmit descriptors to give to DMA */
-    HAL_ETH_TransmitFrame(&h_eth, framelength);
+    HAL_ETH_TransmitFrame((ETH_HandleTypeDef *)&h_eth, framelength);
 
     errval = ERR_OK;
 
@@ -240,7 +234,7 @@ static struct pbuf * low_level_input(struct netif *netif)
     uint32_t byteslefttocopy = 0;
     uint32_t i = 0;
 
-    if (HAL_ETH_GetReceivedFrame(&h_eth) != HAL_OK)
+    if (HAL_ETH_GetReceivedFrame((ETH_HandleTypeDef *)&h_eth) != HAL_OK)
     {
         return NULL;
     }
@@ -355,7 +349,7 @@ void ethernetif_set_link(struct netif *netif)
     uint32_t regval = 0;
 
     /* Read PHY_MISR*/
-    HAL_ETH_ReadPHYRegister(&h_eth, PHY_MISR, &regval);
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_MISR, &regval);
 
     if ((regval & PHY_LINK_INT_UP_MASK) != (uint16_t)RESET)
     {
@@ -384,7 +378,7 @@ void ethernetif_update_config(struct netif *netif)
         if (h_eth.Init.AutoNegotiation != ETH_AUTONEGOTIATION_DISABLE)
         {
             /* Enable Auto-Negotiation */
-            HAL_ETH_WritePHYRegister(&h_eth, PHY_BCR, PHY_AUTONEGOTIATION);
+            HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_BCR, PHY_AUTONEGOTIATION);
 
             /* Get tick */
             tickstart = HAL_GetTick();
@@ -392,19 +386,19 @@ void ethernetif_update_config(struct netif *netif)
             /* Wait until the auto-negotiation will be completed */
             do
             {
-                HAL_ETH_ReadPHYRegister(&h_eth, PHY_BSR, &regval);
+                HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_BSR, &regval);
 
                 /* Check for the Timeout ( 1s ) */
-                if((HAL_GetTick() - tickstart ) > 1000)
+                if ((HAL_GetTick() - tickstart ) > 1000)
                 {
-                /* In case of timeout */
-                goto error;
+                    /* In case of timeout */
+                    goto error;
                 }
 
             } while (((regval & PHY_AUTONEGO_COMPLETE) != PHY_AUTONEGO_COMPLETE));
 
             /* Read the result of the auto-negotiation */
-            HAL_ETH_ReadPHYRegister(&h_eth, PHY_SR, &regval);
+            HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_SR, &regval);
 
             /* Configure the MAC with the Duplex Mode fixed by the auto-negotiation process */
             if ((regval & PHY_DUPLEX_STATUS) != (uint32_t)RESET)
@@ -418,7 +412,7 @@ void ethernetif_update_config(struct netif *netif)
                 h_eth.Init.DuplexMode = ETH_MODE_HALFDUPLEX;
             }
             /* Configure the MAC with the speed fixed by the auto-negotiation process */
-            if(regval & PHY_SPEED_STATUS)
+            if (regval & PHY_SPEED_STATUS)
             {
                 /* Set Ethernet speed to 10M following the auto-negotiation */
                 h_eth.Init.Speed = ETH_SPEED_10M;
@@ -438,21 +432,21 @@ error :
 
             /* Set MAC Speed and Duplex Mode to PHY */
             HAL_ETH_WritePHYRegister(
-                &h_eth,
+                (ETH_HandleTypeDef *)&h_eth,
                 PHY_BCR,
                 ((uint16_t)(h_eth.Init.DuplexMode >> 3) | (uint16_t)(h_eth.Init.Speed >> 1)));
         }
 
         /* ETHERNET MAC Re-Configuration */
-        HAL_ETH_ConfigMAC(&h_eth, (ETH_MACInitTypeDef *) NULL);
+        HAL_ETH_ConfigMAC((ETH_HandleTypeDef *)&h_eth, (ETH_MACInitTypeDef *) NULL);
 
         /* Restart MAC interface */
-        HAL_ETH_Start(&h_eth);
+        HAL_ETH_Start((ETH_HandleTypeDef *)&h_eth);
     }
     else
     {
         /* Stop MAC interface */
-        HAL_ETH_Stop(&h_eth);
+        HAL_ETH_Stop((ETH_HandleTypeDef *)&h_eth);
     }
 
     ethernetif_notify_conn_changed(netif);
@@ -468,4 +462,15 @@ __weak void ethernetif_notify_conn_changed(struct netif *netif)
   /* NOTE : This is function clould be implemented in user file
             when the callback is needed,
   */
+}
+
+/**
+  * @brief  Returns the current time in milliseconds
+  *         when LWIP_TIMERS == 1 and NO_SYS == 1
+  * @param  None
+  * @retval Current Time value
+  */
+u32_t sys_now(void)
+{
+    return HAL_GetTick();
 }

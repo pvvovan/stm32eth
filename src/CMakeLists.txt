@@ -12,6 +12,14 @@ add_definitions(-DDEBUG)
 add_definitions(-DSTM32F407xx)
 add_definitions(-DETH_PHY_KSZ8021RNL)
 
+set(LWIP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib/lwip)
+set (LWIP_INCLUDE_DIRS
+    "${LWIP_DIR}/src/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../inc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../inc/arch")
+
+include(${LWIP_DIR}/src/Filelists.cmake)
+
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/../linker/STM32F407VGTX_FLASH.ld")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
@@ -35,5 +43,6 @@ set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl
 
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
-target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl lwip startup)
+target_include_directories(stm32eth.elf PRIVATE ${LWIP_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl lwipcore startup)
 

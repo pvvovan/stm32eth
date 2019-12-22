@@ -28,11 +28,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/hal/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8021rnl/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/lwip/src/include")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 
 set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl,--gc-sections -Wl,--start-group -Wl,-lc -Wl,-lm -Wl,--end-group")
 
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
-target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl lwip startup)
 

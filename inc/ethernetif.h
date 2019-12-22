@@ -17,4 +17,9 @@
 #define ETH_RX_BUF_NUM                 4U                  /* 4 Rx buffers of size ETH_RX_BUF_SIZE  */
 #define ETH_TX_BUF_NUM                 4U                  /* 4 Tx buffers of size ETH_TX_BUF_SIZE  */
 
+err_t ethernetif_init(struct netif *netif);
+void ethernetif_input(struct netif *netif);
+void ethernetif_set_link(struct netif *netif);
+void ethernetif_update_config(struct netif *netif);
+
 #endif /* ETHERNETIF_H */

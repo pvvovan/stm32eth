@@ -40,7 +40,7 @@
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
-#include "ksz8021rnl.h"
+#include "ksz8081rnd.h"
 
 struct netif gnetif;
 

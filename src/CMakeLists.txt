@@ -10,7 +10,7 @@ add_definitions(-DHSE_VALUE=8000000U)
 add_definitions(-DUSE_HAL_DRIVER)
 add_definitions(-DDEBUG)
 add_definitions(-DSTM32F407xx)
-add_definitions(-DETH_PHY_KSZ8021RNL)
+add_definitions(-DETH_PHY_KSZ8081RND)
 
 set(LWIP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../lib/lwip)
 set (LWIP_INCLUDE_DIRS
@@ -37,7 +37,7 @@ set(LOCAL_SRCS
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/hal/inc")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8021rnl/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8081rnd/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/lwip/src/include")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 
@@ -46,5 +46,5 @@ set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
 target_include_directories(stm32eth.elf PRIVATE ${LWIP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8021rnl lwipcore startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8081rnd lwipcore startup)
 

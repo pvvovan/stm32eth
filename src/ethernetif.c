@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include "ksz8021rnl.h"
+#include "ksz8081rnd.h"
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
@@ -37,17 +37,19 @@ __weak void ethernetif_notify_conn_changed(struct netif *netif);
   */
 static void low_level_init(struct netif *netif)
 {
-    int status = -1;
+    PHY_STATUS_E status = E_PHY_STATUS_ERROR;
     uint32_t regval = 0;
     uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
 
-    status = ksz8021_init((ETH_HandleTypeDef *)&h_eth, macaddress);
-    if (status < 0)
+    status = ksz8081_init((ETH_HandleTypeDef *)&h_eth, macaddress);
+    if (status == E_PHY_STATUS_ERROR)
     {
         return;
     }
-
-    netif->flags |= NETIF_FLAG_LINK_UP;
+    else if (status == E_PHY_STATUS_OK)
+    {
+        netif->flags |= NETIF_FLAG_LINK_UP;
+    }
 
     /* Initialize Rx Descriptors list: Chain Mode  */
     HAL_ETH_DMARxDescListInit((ETH_HandleTypeDef *)&h_eth, dma_rx_desc_tab, &rx_buf[0][0], ETH_RX_BUF_NUM);

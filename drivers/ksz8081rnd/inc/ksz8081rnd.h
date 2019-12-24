@@ -1,5 +1,5 @@
-#ifndef KSZ8021NRL_H
-#define KSZ8021NRL_H
+#ifndef KSZ8081RND_H
+#define KSZ8081RND_H
 
 #include "stm32f4xx_hal.h"
 
@@ -47,9 +47,9 @@
 
 /* Section 2: PHY configuration section */
 
-/* KSZ8021NRL PHY Address
+/* KSZ8081RND PHY Address
  * Note: 0 - default address after startup */
-#define PHY_ADDRESS                     0x00U
+#define PHY_ADDRESS                     0x03U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/
 #define PHY_RESET_DELAY                 0x000000FFU
 /* PHY Configuration delay */
@@ -83,6 +83,7 @@
 #define PHY_SR                          ((uint16_t)0x001E)  /*!< PHY status register Offset                      */
 #define PHY_MICR                        ((uint16_t)0x001B)  /*!< MII Interrupt Control Register                  */
 #define PHY_MISR                        ((uint16_t)0x001B)  /*!< MII Interrupt Status and Misc. Control Register */
+#define PHY_CONTROL2                    ((uint16_t)0x001F)  /*!< PHY Control2 Register                           */
 
 #define PHY_LINK_STATUS                 ((uint16_t)0x0001)  /*!< PHY Link mask                                   */
 #define PHY_SPEED_STATUS                ((uint16_t)0x0001)  /*!< PHY Speed mask                                  */
@@ -90,8 +91,19 @@
 #define PHY_MISR_LINK_INT_EN            ((uint16_t)0x0500)  /*!< Enable Interrupt on change of link status       */
 #define PHY_LINK_INT_UP_MASK            ((uint16_t)0x0001)  /*!< PHY link status interrupt mask                  */
 #define PHY_LINK_INT_DOWN_MASK          ((uint16_t)0x0004)  /*!< PHY link status interrupt mask                  */
+#define PHY_REF_CLOCK_SELECT_MASK       ((uint16_t)0x0080)  /*!< PHY Reference clock select mask                 */
+#define PHY_REF_CLOCK_SELECT_25MHZ      ((uint16_t)0x0080)  /*!< PHY Reference clock select 25 MHz               */
+#define PHY_REF_CLOCK_SELECT_50MHZ      ((uint16_t)0x0000)  /*!< PHY Reference clock select 50 MHz               */
 
-int ksz8021_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr);
+typedef enum PHY_STATUS_ENUM
+{
+    E_PHY_STATUS_OK = 0,
+    E_PHY_STATUS_ERROR,
+    E_PHY_STATUS_TIMEOUT,
+    E_PHY_STATUS_BUSY
+} PHY_STATUS_E;
 
-#endif /* KSZ8021NRL_H */
+PHY_STATUS_E ksz8081_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr);
+
+#endif /* KSZ8081RND_H */
 

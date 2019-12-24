@@ -264,9 +264,9 @@
 
 #ifdef HAL_ETH_MODULE_ENABLED
   #include "stm32f4xx_hal_eth.h"
-#if defined(ETH_PHY_KSZ8021RNL)
-  #include "ksz8021rnl.h"
-#endif /* defined(ETH_PHY_KSZ8021RNL) */
+#if defined(ETH_PHY_KSZ8081RND)
+  #include "ksz8081rnd.h"
+#endif /* defined(ETH_PHY_KSZ8081RND) */
 #endif /* HAL_ETH_MODULE_ENABLED */
 
 #ifdef HAL_FLASH_MODULE_ENABLED

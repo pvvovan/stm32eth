@@ -37,16 +37,16 @@ __weak void ethernetif_notify_conn_changed(struct netif *netif);
   */
 static void low_level_init(struct netif *netif)
 {
-    PHY_STATUS_E status = E_PHY_STATUS_ERROR;
+    PHY_STATUS_E phy_status = E_PHY_STATUS_ERROR;
     uint32_t regval = 0;
     uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
 
-    status = ksz8081_init((ETH_HandleTypeDef *)&h_eth, macaddress);
-    if (status == E_PHY_STATUS_ERROR)
+    phy_status = ksz8081_init((ETH_HandleTypeDef *)&h_eth, macaddress);
+    if (phy_status == E_PHY_STATUS_ERROR)
     {
         return;
     }
-    else if (status == E_PHY_STATUS_OK)
+    else if (phy_status == E_PHY_STATUS_OK)
     {
         netif->flags |= NETIF_FLAG_LINK_UP;
     }
@@ -79,13 +79,18 @@ static void low_level_init(struct netif *netif)
     HAL_ETH_Start((ETH_HandleTypeDef *)&h_eth);
 
     /**** Configure PHY to generate an interrupt when Eth Link state changes ****/
-    /* Read Register Configuration */
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_MICR, &regval);
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, &regval);
+    regval &= ~(PHY_INT_LEVEL_ACTIVE_MASK);
+    regval |= PHY_INT_LEVEL_ACTIVE_LOW;
+    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, regval);
 
-    regval |= PHY_MISR_LINK_INT_EN;
+    /* Read Register Configuration */
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, &regval);
+
+    regval |= (PHY_LINK_UP_INT_EN | PHY_LINK_DOWN_INT_EN);
 
     /* Enable Interrupt on change of link status */
-    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_MISR, regval);
+    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, regval);
 }
 
 /**
@@ -104,10 +109,10 @@ err_t ethernetif_init(struct netif *netif)
 {
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
-    #if LWIP_NETIF_HOSTNAME
+#if LWIP_NETIF_HOSTNAME
     /* Initialize interface hostname */
     netif->hostname = "lwip";
-    #endif /* LWIP_NETIF_HOSTNAME */
+#endif /* LWIP_NETIF_HOSTNAME */
 
     netif->name[0] = IFNAME0;
     netif->name[1] = IFNAME1;
@@ -351,13 +356,13 @@ void ethernetif_set_link(struct netif *netif)
     uint32_t regval = 0;
 
     /* Read PHY_MISR*/
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_MISR, &regval);
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_STATUS, &regval);
 
-    if ((regval & PHY_LINK_INT_UP_MASK) != (uint16_t)RESET)
+    if (regval & PHY_LINK_INT_UP_OCCURRED)
     {
         netif_set_link_up(netif);
     }
-    else if ((regval & PHY_LINK_INT_DOWN_MASK) != (uint16_t)RESET)
+    else if (regval & PHY_LINK_INT_DOWN_OCCURED)
     {
         netif_set_link_down(netif);
     }
@@ -366,63 +371,22 @@ void ethernetif_set_link(struct netif *netif)
 /**
   * @brief  Link callback function, this function is called on change of link status
   *         to update low level driver configuration.
-* @param  netif: The network interface
+  * @param  netif: The network interface
   * @retval None
   */
-void ethernetif_update_config(struct netif *netif)
+void ethernetif_link_update(struct netif *netif)
 {
-    __IO uint32_t tickstart = 0;
-    uint32_t regval = 0;
+    HAL_StatusTypeDef status = HAL_ERROR;
 
     if (netif_is_link_up(netif))
     {
         /* Restart the auto-negotiation */
         if (h_eth.Init.AutoNegotiation != ETH_AUTONEGOTIATION_DISABLE)
         {
-            /* Enable Auto-Negotiation */
-            HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_BCR, PHY_AUTONEGOTIATION);
-
-            /* Get tick */
-            tickstart = HAL_GetTick();
-
-            /* Wait until the auto-negotiation will be completed */
-            do
+            status = HAL_ETH_Autonegotiate((ETH_HandleTypeDef *)&h_eth);
+            if (status != HAL_OK)
             {
-                HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_BSR, &regval);
-
-                /* Check for the Timeout ( 1s ) */
-                if ((HAL_GetTick() - tickstart ) > 1000)
-                {
-                    /* In case of timeout */
-                    goto error;
-                }
-
-            } while (((regval & PHY_AUTONEGO_COMPLETE) != PHY_AUTONEGO_COMPLETE));
-
-            /* Read the result of the auto-negotiation */
-            HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_SR, &regval);
-
-            /* Configure the MAC with the Duplex Mode fixed by the auto-negotiation process */
-            if ((regval & PHY_DUPLEX_STATUS) != (uint32_t)RESET)
-            {
-                /* Set Ethernet duplex mode to Full-duplex following the auto-negotiation */
-                h_eth.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
-            }
-            else
-            {
-                /* Set Ethernet duplex mode to Half-duplex following the auto-negotiation */
-                h_eth.Init.DuplexMode = ETH_MODE_HALFDUPLEX;
-            }
-            /* Configure the MAC with the speed fixed by the auto-negotiation process */
-            if (regval & PHY_SPEED_STATUS)
-            {
-                /* Set Ethernet speed to 10M following the auto-negotiation */
-                h_eth.Init.Speed = ETH_SPEED_10M;
-            }
-            else
-            {
-                /* Set Ethernet speed to 100M following the auto-negotiation */
-                h_eth.Init.Speed = ETH_SPEED_100M;
+                goto error;
             }
         }
         else /* AutoNegotiation Disable */
@@ -433,10 +397,7 @@ error :
             assert_param(IS_ETH_DUPLEX_MODE(h_eth.Init.DuplexMode));
 
             /* Set MAC Speed and Duplex Mode to PHY */
-            HAL_ETH_WritePHYRegister(
-                (ETH_HandleTypeDef *)&h_eth,
-                PHY_BCR,
-                ((uint16_t)(h_eth.Init.DuplexMode >> 3) | (uint16_t)(h_eth.Init.Speed >> 1)));
+            (void)HAL_ETH_SetSpeedDuplex((ETH_HandleTypeDef *)&h_eth);
         }
 
         /* ETHERNET MAC Re-Configuration */

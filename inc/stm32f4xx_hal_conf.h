@@ -263,9 +263,11 @@
 #endif /* HAL_DCMI_MODULE_ENABLED */
 
 #ifdef HAL_ETH_MODULE_ENABLED
-  #include "stm32f4xx_hal_eth.h"
 #if defined(ETH_PHY_KSZ8081RND)
+  #include "stm32f4xx_hal_eth_ksz8081.h"
   #include "ksz8081rnd.h"
+#else
+  #include "stm32f4xx_hal_eth.h"
 #endif /* defined(ETH_PHY_KSZ8081RND) */
 #endif /* HAL_ETH_MODULE_ENABLED */
 

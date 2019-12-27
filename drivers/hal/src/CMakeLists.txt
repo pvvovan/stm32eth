@@ -26,7 +26,7 @@ set(LOCAL_SRCS
     "stm32f4xx_hal_crc.c"
     "stm32f4xx_hal_dma.c"
     "stm32f4xx_hal_dma_ex.c"
-    "stm32f4xx_hal_eth.c"
+    "stm32f4xx_hal_eth_ksz8081.c"
     "stm32f4xx_hal_exti.c"
     "stm32f4xx_hal_flash.c"
     "stm32f4xx_hal_flash_ex.c"

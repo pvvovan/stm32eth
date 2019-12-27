@@ -49,51 +49,74 @@
 
 /* KSZ8081RND PHY Address
  * Note: 0 - default address after startup */
-#define PHY_ADDRESS                     0x03U
+#define PHY_ADDRESS                         0x03U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/
-#define PHY_RESET_DELAY                 0x000000FFU
+#define PHY_RESET_DELAY                     0x000000FFU
 /* PHY Configuration delay */
-#define PHY_CONFIG_DELAY                0x00000FFFU
+#define PHY_CONFIG_DELAY                    0x00000FFFU
 
-#define PHY_READ_TO                     0x0000FFFFU
-#define PHY_WRITE_TO                    0x0000FFFFU
+#define PHY_READ_TO                         0x0000FFFFU
+#define PHY_WRITE_TO                        0x0000FFFFU
 
 /* Section 3: Common PHY Registers */
 
-#define PHY_BCR                         ((uint16_t)0x0000)  /*!< Transceiver Basic Control Register   */
-#define PHY_BSR                         ((uint16_t)0x0001)  /*!< Transceiver Basic Status Register    */
+#define PHY_BASIC_CONTROL                   ((uint16_t)0x0000)
+#define PHY_BASIC_STATUS                    ((uint16_t)0x0001)
+#define PHY_IDENTIFIER1                     ((uint16_t)0x0002)
+#define PHY_IDENTIFIER2                     ((uint16_t)0x0003)
+#define PHY_AUTONEG_ADVERTISEMENT           ((uint16_t)0x0004)
+#define PHY_AUTONEG_LINK_PARTNER_ABILITY    ((uint16_t)0x0005)
+#define PHY_AUTONEG_EXPANSION               ((uint16_t)0x0006)
+#define PHY_AUTONEG_NEXT_PAGE               ((uint16_t)0x0007)
+#define PHY_LINK_PARTNER_NEXT_PAGE_ABILITY  ((uint16_t)0x0008)
+#define PHY_DIGITAL_RESERVED_CONTROL        ((uint16_t)0x0010)
+#define PHY_AFE_CONTROL1                    ((uint16_t)0x0011)
+#define PHY_RX_ERROR_COUNTER                ((uint16_t)0x0015)
+#define PHY_OPERATION_MODE_STRAP_OVERRIDE   ((uint16_t)0x0016)
+#define PHY_OPERATION_MODE_STRAP_STATUS     ((uint16_t)0x0017)
+#define PHY_EXPANDED_CONTROL                ((uint16_t)0x0018)
+#define PHY_INTERRUPT_CONTROL               ((uint16_t)0x001B)
+#define PHY_INTERRUPT_STATUS                ((uint16_t)0x001B)
+#define PHY_LINKMD_CONTROL                  ((uint16_t)0x001D)
+#define PHY_LINKMD_STATUS                   ((uint16_t)0x001D)
+#define PHY_CONTROL1                        ((uint16_t)0x001E)
+#define PHY_CONTROL2                        ((uint16_t)0x001F)
 
-#define PHY_RESET                       ((uint16_t)0x8000)  /*!< PHY Reset */
-#define PHY_LOOPBACK                    ((uint16_t)0x4000)  /*!< Select loop-back mode */
-#define PHY_FULLDUPLEX_100M             ((uint16_t)0x2100)  /*!< Set the full-duplex mode at 100 Mb/s */
-#define PHY_HALFDUPLEX_100M             ((uint16_t)0x2000)  /*!< Set the half-duplex mode at 100 Mb/s */
-#define PHY_FULLDUPLEX_10M              ((uint16_t)0x0100)  /*!< Set the full-duplex mode at 10 Mb/s  */
-#define PHY_HALFDUPLEX_10M              ((uint16_t)0x0000)  /*!< Set the half-duplex mode at 10 Mb/s  */
-#define PHY_AUTONEGOTIATION             ((uint16_t)0x1000)  /*!< Enable auto-negotiation function     */
-#define PHY_RESTART_AUTONEGOTIATION     ((uint16_t)0x0200)  /*!< Restart auto-negotiation function    */
-#define PHY_POWERDOWN                   ((uint16_t)0x0800)  /*!< Select the power down mode           */
-#define PHY_ISOLATE                     ((uint16_t)0x0400)  /*!< Isolate PHY from MII                 */
+#define PHY_RESET                           ((uint16_t)0x8000)
+#define PHY_LOOPBACK                        ((uint16_t)0x4000)
+#define PHY_SPEED_100M                      ((uint16_t)0x2000)
+#define PHY_SPEED_10M                       ((uint16_t)0x0000)
+#define PHY_SPEED_MASK                      ((uint16_t)0x2000)
+#define PHY_AUTONEGOTIATION_ENABLE          ((uint16_t)0x1000)
+#define PHY_POWERDOWN                       ((uint16_t)0x0800)
+#define PHY_ISOLATE                         ((uint16_t)0x0400)
+#define PHY_RESTART_AUTONEGOTIATION         ((uint16_t)0x0200)
+#define PHY_DUPLEX_FULL                     ((uint16_t)0x0100)
+#define PHY_DUPLEX_HALF                     ((uint16_t)0x0000)
+#define PHY_DUPLEX_MASK                     ((uint16_t)0x0100)
 
-#define PHY_AUTONEGO_COMPLETE           ((uint16_t)0x0020)  /*!< Auto-Negotiation process completed   */
-#define PHY_LINKED_STATUS               ((uint16_t)0x0004)  /*!< Valid link established               */
-#define PHY_JABBER_DETECTION            ((uint16_t)0x0002)  /*!< Jabber condition detected            */
+#define PHY_AUTONEG_COMPLETE                ((uint16_t)0x0020)
+#define PHY_LINK_IS_UP                      ((uint16_t)0x0004)
+#define PHY_JABBER_DETECTION                ((uint16_t)0x0002)
 
 /* Section 4: Extended PHY Registers */
 
-#define PHY_SR                          ((uint16_t)0x001E)  /*!< PHY status register Offset                      */
-#define PHY_MICR                        ((uint16_t)0x001B)  /*!< MII Interrupt Control Register                  */
-#define PHY_MISR                        ((uint16_t)0x001B)  /*!< MII Interrupt Status and Misc. Control Register */
-#define PHY_CONTROL2                    ((uint16_t)0x001F)  /*!< PHY Control2 Register                           */
+#define PHY_INTERRUPT_CONTROL               ((uint16_t)0x001B)
+#define PHY_INTERRUPT_STATUS                ((uint16_t)0x001B)
 
-#define PHY_LINK_STATUS                 ((uint16_t)0x0001)  /*!< PHY Link mask                                   */
-#define PHY_SPEED_STATUS                ((uint16_t)0x0001)  /*!< PHY Speed mask                                  */
-#define PHY_DUPLEX_STATUS               ((uint16_t)0x0004)  /*!< PHY Duplex mask                                 */
-#define PHY_MISR_LINK_INT_EN            ((uint16_t)0x0500)  /*!< Enable Interrupt on change of link status       */
-#define PHY_LINK_INT_UP_MASK            ((uint16_t)0x0001)  /*!< PHY link status interrupt mask                  */
-#define PHY_LINK_INT_DOWN_MASK          ((uint16_t)0x0004)  /*!< PHY link status interrupt mask                  */
-#define PHY_REF_CLOCK_SELECT_MASK       ((uint16_t)0x0080)  /*!< PHY Reference clock select mask                 */
-#define PHY_REF_CLOCK_SELECT_25MHZ      ((uint16_t)0x0080)  /*!< PHY Reference clock select 25 MHz               */
-#define PHY_REF_CLOCK_SELECT_50MHZ      ((uint16_t)0x0000)  /*!< PHY Reference clock select 50 MHz               */
+#define PHY_LINK_STATUS                     ((uint16_t)0x0001)
+#define PHY_FULL_DUPLEX                     ((uint16_t)0x0004)
+#define PHY_SPEED_10BASE_T                  ((uint16_t)0x0001)
+#define PHY_INT_LEVEL_ACTIVE_HIGH           ((uint16_t)0x0200)
+#define PHY_INT_LEVEL_ACTIVE_LOW            ((uint16_t)0x0000)
+#define PHY_INT_LEVEL_ACTIVE_MASK           ((uint16_t)0x0200)
+#define PHY_LINK_DOWN_INT_EN                ((uint16_t)0x0400)
+#define PHY_LINK_UP_INT_EN                  ((uint16_t)0x0100)
+#define PHY_LINK_INT_UP_OCCURRED            ((uint16_t)0x0001)
+#define PHY_LINK_INT_DOWN_OCCURED           ((uint16_t)0x0004)
+#define PHY_REF_CLOCK_SELECT_MASK           ((uint16_t)0x0080)
+#define PHY_REF_CLOCK_SELECT_25MHZ          ((uint16_t)0x0080)
+#define PHY_REF_CLOCK_SELECT_50MHZ          ((uint16_t)0x0000)
 
 typedef enum PHY_STATUS_ENUM
 {

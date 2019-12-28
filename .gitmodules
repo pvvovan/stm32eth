@@ -1,3 +1,6 @@
 [submodule "lib/lwip"]
 	path = lib/lwip
 	url = git://git.savannah.gnu.org/lwip.git
+[submodule "lib/FreeRTOS-Kernel"]
+	path = lib/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git

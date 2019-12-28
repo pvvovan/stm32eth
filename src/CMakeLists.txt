@@ -46,5 +46,5 @@ set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
 target_include_directories(stm32eth.elf PRIVATE ${LWIP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} stm32f407hal ksz8081rnd lwipcore startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal freertos ksz8081rnd lwipcore startup)
 

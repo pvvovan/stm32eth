@@ -38,7 +38,6 @@ __weak void ethernetif_notify_conn_changed(struct netif *netif);
 static void low_level_init(struct netif *netif)
 {
     PHY_STATUS_E phy_status = E_PHY_STATUS_ERROR;
-    uint32_t regval = 0;
     uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
 
     phy_status = ksz8081_init((ETH_HandleTypeDef *)&h_eth, macaddress);
@@ -77,20 +76,6 @@ static void low_level_init(struct netif *netif)
 
     /* Enable MAC and DMA transmission and reception */
     HAL_ETH_Start((ETH_HandleTypeDef *)&h_eth);
-
-    /**** Configure PHY to generate an interrupt when Eth Link state changes ****/
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, &regval);
-    regval &= ~(PHY_INT_LEVEL_ACTIVE_MASK);
-    regval |= PHY_INT_LEVEL_ACTIVE_LOW;
-    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, regval);
-
-    /* Read Register Configuration */
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, &regval);
-
-    regval |= (PHY_LINK_UP_INT_EN | PHY_LINK_DOWN_INT_EN);
-
-    /* Enable Interrupt on change of link status */
-    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, regval);
 }
 
 /**

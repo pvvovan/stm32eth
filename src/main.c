@@ -41,12 +41,34 @@
 #include "netif/etharp.h"
 #include "ethernetif.h"
 #include "ksz8081rnd.h"
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
 
 struct netif gnetif;
 
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void netif_setup();
+
+void led_task(void *params)
+{
+    GPIO_InitTypeDef gpio;
+
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    gpio.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio.Pull = GPIO_NOPULL;
+    gpio.Pin = GPIO_PIN_13;
+    HAL_GPIO_Init(GPIOD, &gpio);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+
+    for (;;)
+    {
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+        vTaskDelay(500);
+    }
+}
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -62,16 +84,25 @@ int main(void)
     SystemClock_Config();
 
     /* Initialize the LwIP stack */
-    lwip_init();
+//    lwip_init();
 
-    netif_setup();
+//    netif_setup();
+    xTaskCreate(
+            led_task, 
+            "led", 
+            configMINIMAL_STACK_SIZE, 
+            ( void * )NULL, 
+            (2), 
+            NULL);
+
+    vTaskStartScheduler();
 
     /* Infinite loop */
     while (1)
     {
         /* Read a received packet from the Ethernet buffers and send it
         to the lwIP for handling */
-        ethernetif_input(&gnetif);
+//        ethernetif_input(&gnetif);
     }
 }
 

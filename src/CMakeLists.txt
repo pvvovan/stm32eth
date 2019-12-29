@@ -32,7 +32,9 @@ set(LOCAL_SRCS
     "ethernetif.c"
     "syscalls.c"
     "sysmem.c"
-    "main.c")
+    "${CMAKE_CURRENT_SOURCE_DIR}/arch/sys_arch.c"
+    "main.c"
+)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/CMSIS/core/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/dev/inc")
@@ -41,6 +43,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/FreeRTOS-Kernel/include"
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8081rnd/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/lwip/src/include")
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc/arch")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 
 set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl,--gc-sections -Wl,--start-group -Wl,-lc -Wl,-lm -Wl,--end-group")

@@ -5,7 +5,7 @@
  * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
  * use lwIP facilities.
  */
-#define NO_SYS                  1
+#define NO_SYS                  0
 
 /**
  * SYS_LIGHTWEIGHT_PROT==0: disable inter-task protection (and task-vs-interrupt

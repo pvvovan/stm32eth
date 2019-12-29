@@ -151,6 +151,7 @@ PHY_STATUS_E ksz8081_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr)
 {
     int ksz_status = 0;
     HAL_StatusTypeDef hal_status = HAL_ERROR;
+    uint32_t regval = 0;
 
     if (heth == NULL || mac_addr == NULL)
     {
@@ -187,6 +188,21 @@ PHY_STATUS_E ksz8081_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr)
 
     /* configure ethernet peripheral */
     hal_status = HAL_ETH_Init(heth);
+
+
+    /**** Configure PHY to generate an interrupt when Eth Link state changes ****/
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, &regval);
+    regval &= ~(PHY_INT_LEVEL_ACTIVE_MASK);
+    regval |= PHY_INT_LEVEL_ACTIVE_LOW;
+    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, regval);
+
+    /* Read Register Configuration */
+    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, &regval);
+
+    regval |= (PHY_LINK_UP_INT_EN | PHY_LINK_DOWN_INT_EN);
+
+    /* Enable Interrupt on change of link status */
+    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, regval);
 
     return ksz8081_hal_error_map(hal_status);
 }

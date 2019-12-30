@@ -1,13 +1,21 @@
-#include <stdint.h>
 #include <string.h>
 #include "ksz8081rnd.h"
 #include "lwip/timeouts.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
 
 /* Network interface name */
 #define IFNAME0 'G'
 #define IFNAME1 'L'
+
+#define ETHIF_IN_TASK_PRIO          (tskIDLE_PRIORITY + 1)
+#define ETHIF_IN_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 4)
+
+#define LINK_STATE_TASK_PRIO          (tskIDLE_PRIORITY + 2)
+#define LINK_STATE_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 2)
 
 static volatile ETH_HandleTypeDef h_eth;
 
@@ -15,18 +23,43 @@ static volatile ETH_HandleTypeDef h_eth;
 __ALIGN_BEGIN uint8_t rx_buf[ETH_RX_BUF_NUM][ETH_RX_BUF_SIZE] __ALIGN_END;
 
 /* Ethernet Rx DMA Descriptor */
-__ALIGN_BEGIN ETH_DMADescTypeDef  dma_rx_desc_tab[ETH_RX_BUF_NUM] __ALIGN_END;
+__ALIGN_BEGIN ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RX_BUF_NUM] __ALIGN_END;
 
 /* Ethernet Transmit Buffer */
 __ALIGN_BEGIN uint8_t tx_buf[ETH_TX_BUF_NUM][ETH_TX_BUF_SIZE] __ALIGN_END;
 
 /* Ethernet Tx DMA Descriptor */
-__ALIGN_BEGIN ETH_DMADescTypeDef  dma_tx_desc_tab[ETH_TX_BUF_NUM] __ALIGN_END;
+__ALIGN_BEGIN ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TX_BUF_NUM] __ALIGN_END;
+
+static SemaphoreHandle_t eth_irq_sem = NULL;
+static SemaphoreHandle_t link_irq_sem = NULL;
 
 static void low_level_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static struct pbuf * low_level_input(struct netif *netif);
 __weak void ethernetif_notify_conn_changed(struct netif *netif);
+static void ethernetif_rx_complete_cb(ETH_HandleTypeDef *heth);
+void ethernetif_input(void * const arg);
+void link_state(void * const arg);
+
+/**
+ * This function is called from the interrupt context
+ */
+static void ethernetif_rx_complete_cb(ETH_HandleTypeDef *heth)
+{
+    (void)heth;
+    BaseType_t reschedule;
+
+    if (eth_irq_sem != NULL)
+    {
+        reschedule = pdFALSE;
+        /* Unblock the task by releasing the semaphore. */
+        xSemaphoreGiveFromISR(eth_irq_sem, &reschedule);
+
+        /* If reschedule was set to true we should yield. */
+        portYIELD_FROM_ISR(reschedule);
+    }
+}
 
 /**
   * @brief In this function, the hardware should be initialized.
@@ -60,12 +93,12 @@ static void low_level_init(struct netif *netif)
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
     /* set MAC hardware address */
-    netif->hwaddr[0] =  MAC_ADDR0;
-    netif->hwaddr[1] =  MAC_ADDR1;
-    netif->hwaddr[2] =  MAC_ADDR2;
-    netif->hwaddr[3] =  MAC_ADDR3;
-    netif->hwaddr[4] =  MAC_ADDR4;
-    netif->hwaddr[5] =  MAC_ADDR5;
+    netif->hwaddr[0] = MAC_ADDR0;
+    netif->hwaddr[1] = MAC_ADDR1;
+    netif->hwaddr[2] = MAC_ADDR2;
+    netif->hwaddr[3] = MAC_ADDR3;
+    netif->hwaddr[4] = MAC_ADDR4;
+    netif->hwaddr[5] = MAC_ADDR5;
 
     /* maximum transfer unit */
     netif->mtu = 1500;
@@ -74,8 +107,16 @@ static void low_level_init(struct netif *netif)
     /* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
     netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
 
+    /* Register TX completion callback */
+    HAL_ETH_RegisterCallback(
+        (ETH_HandleTypeDef *)&h_eth,
+        HAL_ETH_RX_COMPLETE_CB_ID,
+        ethernetif_rx_complete_cb);
     /* Enable MAC and DMA transmission and reception */
     HAL_ETH_Start((ETH_HandleTypeDef *)&h_eth);
+
+    HAL_NVIC_SetPriority(ETH_IRQn, ETH_INT_PRIO, 0);
+    HAL_NVIC_EnableIRQ(ETH_IRQn);
 }
 
 /**
@@ -92,6 +133,7 @@ static void low_level_init(struct netif *netif)
   */
 err_t ethernetif_init(struct netif *netif)
 {
+    BaseType_t status;
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
 #if LWIP_NETIF_HOSTNAME
@@ -110,6 +152,26 @@ err_t ethernetif_init(struct netif *netif)
 
     /* initialize the hardware */
     low_level_init(netif);
+
+    status = xTaskCreate(
+                link_state,
+                "link_st",
+                LINK_STATE_TASK_STACK_SIZE,
+                (void *)netif,
+                LINK_STATE_TASK_PRIO,
+                NULL);
+
+    configASSERT(status);
+
+    status = xTaskCreate(
+                ethernetif_input,
+                "ethif_in",
+                ETHIF_IN_TASK_STACK_SIZE,
+                (void *)netif,
+                ETHIF_IN_TASK_PRIO,
+                NULL);
+
+    configASSERT(status);
 
     return ERR_OK;
 }
@@ -297,6 +359,32 @@ static struct pbuf * low_level_input(struct netif *netif)
     return p;
 }
 
+void link_state(void * const arg)
+{
+    uint32_t regval = 0;
+    struct netif *netif = (struct netif *)arg;
+
+    link_irq_sem = xSemaphoreCreateBinary();
+    configASSERT(link_irq_sem != NULL);
+
+    for (;;)
+    {
+        if (xSemaphoreTake(link_irq_sem, portMAX_DELAY) == pdTRUE)
+        {
+            /* Read PHY_MISR*/
+            HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_STATUS, &regval);
+
+            if (regval & PHY_LINK_INT_UP_OCCURRED)
+            {
+                netif_set_link_up(netif);
+            }
+            else if (regval & PHY_LINK_INT_DOWN_OCCURED)
+            {
+                netif_set_link_down(netif);
+            }
+        }
+    }
+}
 /**
   * @brief This function should be called when a packet is ready to be read
   * from the interface. It uses the function low_level_input() that
@@ -306,28 +394,37 @@ static struct pbuf * low_level_input(struct netif *netif)
   *
   * @param netif the lwip network interface structure for this ethernetif
   */
-void ethernetif_input(struct netif *netif)
+void ethernetif_input(void * const arg)
 {
     err_t err;
+    struct netif *netif = (struct netif *)arg;
     struct pbuf *p;
 
-    /* move received packet into a new pbuf */
-    p = low_level_input(netif);
+    eth_irq_sem = xSemaphoreCreateBinary();
+    configASSERT(eth_irq_sem != NULL);
 
-    /* no packet could be read, silently ignore this */
-    if (p == NULL)
+    for (;;)
     {
-        return;
-    }
+        if (xSemaphoreTake(eth_irq_sem, portMAX_DELAY) == pdTRUE)
+        {
+            do
+            {
+                /* move received packet into a new pbuf */
+                p = low_level_input(netif);
 
-    /* entry point to the LwIP stack */
-    err = netif->input(p, netif);
+                if (p != NULL)
+                {
+                    /* entry point to the LwIP stack */
+                    err = netif->input(p, netif);
 
-    if (err != ERR_OK)
-    {
-        LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-        pbuf_free(p);
-        p = NULL;
+                    if (err != ERR_OK)
+                    {
+                        pbuf_free(p);
+                        p = NULL;
+                    }
+                }
+            } while (p != NULL);
+        }
     }
 }
 
@@ -336,20 +433,18 @@ void ethernetif_input(struct netif *netif)
   * @param  netif: the network interface
   * @retval None
   */
-void ethernetif_set_link(struct netif *netif)
+void ethernetif_phy_irq()
 {
-    uint32_t regval = 0;
+    BaseType_t reschedule;
 
-    /* Read PHY_MISR*/
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_STATUS, &regval);
+    if (link_irq_sem != NULL)
+    {
+        reschedule = pdFALSE;
+        /* Unblock the task by releasing the semaphore. */
+        xSemaphoreGiveFromISR(link_irq_sem, &reschedule);
 
-    if (regval & PHY_LINK_INT_UP_OCCURRED)
-    {
-        netif_set_link_up(netif);
-    }
-    else if (regval & PHY_LINK_INT_DOWN_OCCURED)
-    {
-        netif_set_link_down(netif);
+        /* If reschedule was set to true we should yield. */
+        portYIELD_FROM_ISR(reschedule);
     }
 }
 

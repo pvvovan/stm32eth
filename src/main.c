@@ -84,9 +84,10 @@ int main(void)
     SystemClock_Config();
 
     /* Initialize the LwIP stack */
-//    lwip_init();
+    lwip_init();
 
-//    netif_setup();
+    netif_setup();
+
     xTaskCreate(
             led_task, 
             "led", 
@@ -97,13 +98,7 @@ int main(void)
 
     vTaskStartScheduler();
 
-    /* Infinite loop */
-    while (1)
-    {
-        /* Read a received packet from the Ethernet buffers and send it
-        to the lwIP for handling */
-//        ethernetif_input(&gnetif);
-    }
+    for (;;) { ; }
 }
 
 /**
@@ -185,8 +180,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin)
     if (pin == RMII_PHY_INT_PIN)
     {
         /* Get the IT status register value */
-        ethernetif_set_link(&gnetif);
-
+        ethernetif_phy_irq();
         /* Handle timeouts */
         sys_check_timeouts();
     }

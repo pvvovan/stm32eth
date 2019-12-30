@@ -50,12 +50,19 @@ struct netif gnetif;
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void netif_setup();
+void init_task(void *param);
 
-void led_task(void *params)
+void init_task(void *param)
 {
     GPIO_InitTypeDef gpio;
+    (void)param;
 
     __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    /* Initialize the LwIP stack */
+    lwip_init();
+    /* Initialize PHY */
+    netif_setup();
 
     gpio.Mode = GPIO_MODE_OUTPUT_PP;
     gpio.Pull = GPIO_NOPULL;
@@ -69,7 +76,6 @@ void led_task(void *params)
         vTaskDelay(500);
     }
 }
-
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  Main program
@@ -83,22 +89,22 @@ int main(void)
     /* Configure the system clock to 168 MHz */
     SystemClock_Config();
 
-    /* Initialize the LwIP stack */
-    lwip_init();
-
-    netif_setup();
-
     xTaskCreate(
-            led_task, 
-            "led", 
-            configMINIMAL_STACK_SIZE, 
-            ( void * )NULL, 
-            (2), 
+            init_task,
+            "init",
+            (configMINIMAL_STACK_SIZE * 2),
+            (void *)NULL,
+            (3),
             NULL);
 
     vTaskStartScheduler();
 
     for (;;) { ; }
+}
+
+uint32_t HAL_GetTick(void)
+{
+    return xTaskGetTickCount();
 }
 
 /**

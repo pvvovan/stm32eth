@@ -17,7 +17,7 @@
 #define LINK_STATE_TASK_PRIO          (tskIDLE_PRIORITY + 2)
 #define LINK_STATE_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 2)
 
-static volatile ETH_HandleTypeDef h_eth;
+volatile ETH_HandleTypeDef h_eth;
 
 /* Ethernet Receive Buffer */
 __ALIGN_BEGIN uint8_t rx_buf[ETH_RX_BUF_NUM][ETH_RX_BUF_SIZE] __ALIGN_END;

@@ -55,6 +55,7 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
+extern volatile ETH_HandleTypeDef h_eth;
 /******************************************************************************/
 /*            Cortex-M4 Processor Exceptions Handlers                         */
 /******************************************************************************/
@@ -166,6 +167,11 @@ void EXTI9_5_IRQHandler(void)
 {
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+}
+
+void ETH_IRQHandler(void)
+{
+    HAL_ETH_IRQHandler((ETH_HandleTypeDef *)&h_eth);
 }
 
 /******************************************************************************/

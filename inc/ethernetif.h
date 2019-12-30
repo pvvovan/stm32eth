@@ -20,7 +20,6 @@
 #define ETH_TX_BUF_NUM                 4U                  /* 4 Tx buffers of size ETH_TX_BUF_SIZE  */
 
 err_t ethernetif_init(struct netif *netif);
-void ethernetif_input(void * const arg);
 void ethernetif_phy_irq();
 void ethernetif_link_update(struct netif *netif);
 

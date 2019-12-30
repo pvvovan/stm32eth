@@ -41,7 +41,7 @@
 #define RMII_PHY_RST_PORT       GPIOD
 #define RMII_PHY_RST_PIN        GPIO_PIN_10
 
-#define PHY_INT_PRIO            (2)
+#define PHY_INT_PRIO            (7)
 
 /* ################## Ethernet peripheral configuration ##################### */
 

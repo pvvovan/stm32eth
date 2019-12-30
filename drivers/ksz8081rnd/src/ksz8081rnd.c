@@ -182,7 +182,7 @@ PHY_STATUS_E ksz8081_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr)
     heth->Init.Speed = ETH_SPEED_100M;
     heth->Init.DuplexMode = ETH_MODE_FULLDUPLEX;
     heth->Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
-    heth->Init.RxMode = ETH_RXPOLLING_MODE;
+    heth->Init.RxMode = ETH_RXINTERRUPT_MODE;
     heth->Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
     heth->Init.PhyAddress = PHY_ADDRESS;
 
@@ -191,18 +191,17 @@ PHY_STATUS_E ksz8081_init(ETH_HandleTypeDef *heth, uint8_t *mac_addr)
 
 
     /**** Configure PHY to generate an interrupt when Eth Link state changes ****/
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, &regval);
+    HAL_ETH_ReadPHYRegister(heth, PHY_CONTROL2, &regval);
     regval &= ~(PHY_INT_LEVEL_ACTIVE_MASK);
     regval |= PHY_INT_LEVEL_ACTIVE_LOW;
-    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_CONTROL2, regval);
+    HAL_ETH_WritePHYRegister(heth, PHY_CONTROL2, regval);
 
     /* Read Register Configuration */
-    HAL_ETH_ReadPHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, &regval);
+    HAL_ETH_ReadPHYRegister(heth, PHY_INTERRUPT_CONTROL, &regval);
 
     regval |= (PHY_LINK_UP_INT_EN | PHY_LINK_DOWN_INT_EN);
 
     /* Enable Interrupt on change of link status */
-    HAL_ETH_WritePHYRegister((ETH_HandleTypeDef *)&h_eth, PHY_INTERRUPT_CONTROL, regval);
-
+    HAL_ETH_WritePHYRegister(heth, PHY_INTERRUPT_CONTROL, regval);
     return ksz8081_hal_error_map(hal_status);
 }

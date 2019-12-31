@@ -42,6 +42,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/hal/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/FreeRTOS-Kernel/include")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/ksz8081rnd/inc")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../drivers/wh1602/inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../lib/lwip/src/include")
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc/arch")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
@@ -51,5 +52,5 @@ set (CMAKE_EXE_LINKER_FLAGS "-T${LINKER_SCRIPT} -Wl,-Map=${PROJECT_NAME}.map -Wl
 add_executable(${PROJECT_NAME} ${LOCAL_SRCS} ${LOCAL_HDRS})
 
 target_include_directories(stm32eth.elf PRIVATE ${LWIP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} stm32f407hal freertos ksz8081rnd lwipcore startup)
+target_link_libraries(${PROJECT_NAME} stm32f407hal freertos ksz8081rnd wh1602 lwipcore startup)
 

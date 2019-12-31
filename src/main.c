@@ -38,9 +38,11 @@
 #include "lwip/init.h"
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
+#include "lwip/inet.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
 #include "ksz8081rnd.h"
+#include "wh1602.h"
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
@@ -58,6 +60,9 @@ void init_task(void *param)
     (void)param;
 
     __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    /* Initialize LCD */
+    lcd_init();
 
     /* Initialize the LwIP stack */
     lwip_init();
@@ -214,16 +219,23 @@ static void netif_setup()
     /* Registers the default network interface */
     netif_set_default(&gnetif);
 
+    lcd_clear();
+    lcd_print_string_at("IP:", 0, 0);
+
     if (netif_is_link_up(&gnetif))
     {
         /* When the netif is fully configured this function must be called */
         netif_set_up(&gnetif);
+// ip4addr_ntoa	(	const ip4_addr_t * 	addr	)
+        lcd_print_string_at(inet_ntoa(gnetif.ip_addr), 0, 1);
     }
     else
     {
         /* When the netif link is down this function must be called */
         netif_set_down(&gnetif);
+        lcd_print_string_at("LINK DOWN", 0, 1);
     }
+
 
     /* Set the link callback function, this function is called on change of link status */
     netif_set_link_callback(&gnetif, ethernetif_link_update);

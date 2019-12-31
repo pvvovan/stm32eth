@@ -6,6 +6,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "task.h"
+#include "wh1602.h"
 
 /* Network interface name */
 #define IFNAME0 'G'

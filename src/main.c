@@ -39,6 +39,7 @@
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
 #include "lwip/inet.h"
+#include "lwip/tcpip.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
 #include "ksz8081rnd.h"
@@ -64,8 +65,8 @@ void init_task(void *param)
     /* Initialize LCD */
     lcd_init();
 
-    /* Initialize the LwIP stack */
-    lwip_init();
+    /* Create TCP/IP stack thread */
+    tcpip_init(NULL, NULL);
     /* Initialize PHY */
     netif_setup();
 
@@ -192,8 +193,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t pin)
     {
         /* Get the IT status register value */
         ethernetif_phy_irq();
-        /* Handle timeouts */
-        sys_check_timeouts();
     }
 }
 
@@ -203,15 +202,9 @@ static void netif_setup()
     ip_addr_t netmask;
     ip_addr_t gw;
 
-#ifdef USE_DHCP
     ip_addr_set_zero_ip4(&ipaddr);
     ip_addr_set_zero_ip4(&netmask);
     ip_addr_set_zero_ip4(&gw);
-#else
-    IP_ADDR4(&ipaddr,IP_ADDR0,IP_ADDR1,IP_ADDR2,IP_ADDR3);
-    IP_ADDR4(&netmask,NETMASK_ADDR0,NETMASK_ADDR1,NETMASK_ADDR2,NETMASK_ADDR3);
-    IP_ADDR4(&gw,GW_ADDR0,GW_ADDR1,GW_ADDR2,GW_ADDR3);
-#endif /* USE_DHCP */
 
     /* Add the network interface */
     netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &ethernet_input);
@@ -219,26 +212,21 @@ static void netif_setup()
     /* Registers the default network interface */
     netif_set_default(&gnetif);
 
+    /* Set the link callback function, this function is called on change of link status */
+    netif_set_link_callback(&gnetif, ethernetif_link_update);
+
     lcd_clear();
-    lcd_print_string_at("IP:", 0, 0);
 
     if (netif_is_link_up(&gnetif))
     {
         /* When the netif is fully configured this function must be called */
         netif_set_up(&gnetif);
-// ip4addr_ntoa	(	const ip4_addr_t * 	addr	)
-        lcd_print_string_at(inet_ntoa(gnetif.ip_addr), 0, 1);
     }
     else
     {
         /* When the netif link is down this function must be called */
         netif_set_down(&gnetif);
-        lcd_print_string_at("LINK DOWN", 0, 1);
     }
-
-
-    /* Set the link callback function, this function is called on change of link status */
-    netif_set_link_callback(&gnetif, ethernetif_link_update);
 }
 
 /**

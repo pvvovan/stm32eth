@@ -1,22 +1,43 @@
 #include <string.h>
 #include "ksz8081rnd.h"
+#include "lwip/dhcp.h"
 #include "lwip/timeouts.h"
+#include "lwip/inet.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "task.h"
 #include "wh1602.h"
+#include "main.h"
 
 /* Network interface name */
 #define IFNAME0 'G'
 #define IFNAME1 'L'
 
-#define ETHIF_IN_TASK_PRIO          (tskIDLE_PRIORITY + 1)
+#define ETHIF_IN_TASK_PRIO          (tskIDLE_PRIORITY + 3)
 #define ETHIF_IN_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 4)
 
-#define LINK_STATE_TASK_PRIO          (tskIDLE_PRIORITY + 2)
-#define LINK_STATE_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 2)
+#define LINK_STATE_TASK_PRIO        (tskIDLE_PRIORITY + 4)
+#define LINK_STATE_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE * 2)
+
+#define DHCP_FSM_TASK_PRIO          (tskIDLE_PRIORITY + 2)
+#define DHCP_FSM_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 2)
+
+#define DHCP_FSM_DELAY_MS           (500)
+#define DHCP_MAX_TRIES              (4)
+
+#define STRING_BUF_LEN              (21)
+
+typedef enum DHCP_STATE_ENUM
+{
+    E_DHCP_OFF = 0,
+    E_DHCP_START,
+    E_DHCP_WAIT_ADDRESS,
+    E_DHCP_ADDRESS_ASSIGNED,
+    E_DHCP_TIMEOUT,
+    E_DHCP_LINK_DOWN
+} DHCP_STATE_E;
 
 volatile ETH_HandleTypeDef h_eth;
 
@@ -34,14 +55,19 @@ __ALIGN_BEGIN ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TX_BUF_NUM] __ALIGN_END;
 
 static SemaphoreHandle_t eth_irq_sem = NULL;
 static SemaphoreHandle_t link_irq_sem = NULL;
+static SemaphoreHandle_t dhcp_state_mut = NULL;
+static volatile DHCP_STATE_E dhcp_state = E_DHCP_OFF;
 
 static void low_level_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static struct pbuf * low_level_input(struct netif *netif);
-__weak void ethernetif_notify_conn_changed(struct netif *netif);
+void ethernetif_notify_conn_changed(struct netif *netif);
 static void ethernetif_rx_complete_cb(ETH_HandleTypeDef *heth);
 void ethernetif_input(void * const arg);
 void link_state(void * const arg);
+void dhcp_fsm(void * const arg);
+static void dhcp_process(struct netif *netif);
+static void dhcp_set_state(DHCP_STATE_E new_state);
 
 /**
  * This function is called from the interrupt context
@@ -160,6 +186,16 @@ err_t ethernetif_init(struct netif *netif)
                 LINK_STATE_TASK_STACK_SIZE,
                 (void *)netif,
                 LINK_STATE_TASK_PRIO,
+                NULL);
+
+    configASSERT(status);
+
+    status = xTaskCreate(
+                dhcp_fsm,
+                "dhcp_fsm",
+                DHCP_FSM_TASK_STACK_SIZE,
+                (void *)netif,
+                DHCP_FSM_TASK_PRIO,
                 NULL);
 
     configASSERT(status);
@@ -386,6 +422,126 @@ void link_state(void * const arg)
         }
     }
 }
+
+static void dhcp_set_state(DHCP_STATE_E new_state)
+{
+    if (dhcp_state_mut != NULL)
+    {
+        xSemaphoreTake(dhcp_state_mut, portMAX_DELAY);
+        dhcp_state = new_state;
+        xSemaphoreGive(dhcp_state_mut);
+    }
+}
+
+static void dhcp_process(struct netif *netif)
+{
+    ip_addr_t ipaddr;
+    ip_addr_t netmask;
+    ip_addr_t gw;
+    struct dhcp *dhcp;
+    char str[STRING_BUF_LEN] = { 0 };
+  
+    switch (dhcp_state)
+    {
+        case E_DHCP_START:
+        {
+            ip_addr_set_zero_ip4(&netif->ip_addr);
+            ip_addr_set_zero_ip4(&netif->netmask);
+            ip_addr_set_zero_ip4(&netif->gw);
+            dhcp_set_state(E_DHCP_WAIT_ADDRESS);
+            dhcp_start(netif);
+            lcd_print_string_at("DHCP:      ", 0, 0);
+            lcd_print_string_at("starting...", 0, 1);
+            break;
+        }
+    
+        case E_DHCP_WAIT_ADDRESS:
+        {
+            if (dhcp_supplied_address(netif)) 
+            {
+                dhcp_set_state(E_DHCP_ADDRESS_ASSIGNED);
+
+                sprintf(str, "%s",inet_ntoa(netif->ip_addr));
+                lcd_print_string_at("DHCP:      ", 0, 0);
+                lcd_print_string_at(str, 0, 1);
+            }
+            else
+            {
+                dhcp = (struct dhcp *)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP);
+    
+                /* DHCP timeout */
+                if (dhcp->tries > DHCP_MAX_TRIES)
+                {
+                    dhcp_set_state(E_DHCP_TIMEOUT);
+                    
+                    /* Stop DHCP */
+                    dhcp_stop(netif);
+                    
+                    /* Static address used */
+                    IP_ADDR4(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+                    IP_ADDR4(&netmask, NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+                    IP_ADDR4(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+                    netif_set_addr(netif, &ipaddr, &netmask, &gw);
+                    
+                    sprintf(str, "%s",inet_ntoa(netif->ip_addr));
+                    lcd_print_string_at("Static:       ", 0, 0);
+                    lcd_print_string_at(str, 0, 1);
+                }
+                else
+                {
+                    sprintf(str, "retry: %d    ", dhcp->tries);
+                    lcd_print_string_at("DHCP:      ", 0, 0);
+                    lcd_print_string_at(str, 0, 1);
+                }
+            }
+            break;
+        }
+
+        case E_DHCP_LINK_DOWN:
+        {
+            /* Stop DHCP */
+            dhcp_stop(netif);
+            dhcp_set_state(E_DHCP_OFF);
+            
+            lcd_print_string_at("Link:      ", 0, 0);
+            lcd_print_string_at("down       ", 0, 1);
+            break;
+        }
+
+        case E_DHCP_ADDRESS_ASSIGNED:
+            /* no break here */
+        case E_DHCP_TIMEOUT:
+            /* no break here */
+        case E_DHCP_OFF:
+            /* no break here */
+        {
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+    }
+}
+
+void dhcp_fsm(void * const arg)
+{
+    struct netif *netif = (struct netif *)arg;
+
+    dhcp_state_mut = xSemaphoreCreateMutex();
+    configASSERT(dhcp_state_mut != NULL);
+
+    /* Start DHCP address request */
+    ethernetif_dhcp_start();
+
+    for (;;)
+    {
+        dhcp_process(netif);
+        vTaskDelay(DHCP_FSM_DELAY_MS);
+    }
+}
+
 /**
   * @brief This function should be called when a packet is ready to be read
   * from the interface. It uses the function low_level_input() that
@@ -501,10 +657,22 @@ error :
   * @param  netif: the network interface
   * @retval None
   */
-__weak void ethernetif_notify_conn_changed(struct netif *netif)
+void ethernetif_notify_conn_changed(struct netif *netif)
 {
-  /* NOTE : This is function clould be implemented in user file
-            when the callback is needed,
-  */
+    if (netif_is_link_up(netif))
+    {
+        dhcp_set_state(E_DHCP_START);
+        netif_set_up(netif);     
+    }
+    else
+    {
+        dhcp_set_state(E_DHCP_LINK_DOWN);
+        netif_set_down(netif);
+    }
+}
+
+void ethernetif_dhcp_start()
+{
+    dhcp_set_state(E_DHCP_START);
 }
 

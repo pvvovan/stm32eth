@@ -40,8 +40,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} "../inc")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "FreeRTOS-Kernel/include")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} "FreeRTOS-Kernel/portable/GCC/ARM_CM4F")
 
-message(STATUS "!!! LOCAL_SRCS: " "${LOCAL_SRCS}")
-message(STATUS "!!! LOCAL_HDRS: " "${LOCAL_HDRS}")
-
 add_library(freertos ${LOCAL_SRCS} ${LOCAL_HDRS})
 

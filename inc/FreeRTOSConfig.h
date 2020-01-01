@@ -42,9 +42,7 @@
  *----------------------------------------------------------*/
 
 /* Ensure stdint is only used by the compiler, and not the assembler. */
-#ifdef __ICCARM__
-	#include <stdint.h>
-#endif
+#include <stdint.h>
 extern uint32_t HAL_RCC_GetHCLKFreq(void);
 
 #define configUSE_PREEMPTION			1
@@ -69,7 +67,7 @@ extern uint32_t HAL_RCC_GetHCLKFreq(void);
 #define configGENERATE_RUN_TIME_STATS	0
 
 /* Co-routine definitions. */
-#define configUSE_CO_ROUTINES 		0
+#define configUSE_CO_ROUTINES 		    0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 
 /* Software timer definitions. */

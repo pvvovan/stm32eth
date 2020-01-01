@@ -1,6 +1,8 @@
 #ifndef LWIPOPTS_H
 #define LWIPOPTS_H
 
+#include "FreeRTOSConfig.h"
+
 /**
  * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
  * use lwIP facilities.
@@ -12,7 +14,7 @@
  * protection) for certain critical regions during buffer allocation, deallocation
  * and memory allocation and deallocation.
  */
-#define SYS_LIGHTWEIGHT_PROT    0
+#define SYS_LIGHTWEIGHT_PROT    1
 
 /* ---------- Memory options ---------- */
 /* MEM_ALIGNMENT: should be set to the alignment of the CPU for which
@@ -39,7 +41,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_TCP_PCB_LISTEN 5
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
-#define MEMP_NUM_TCP_SEG        8
+#define MEMP_NUM_TCP_SEG        12
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
 #define MEMP_NUM_SYS_TIMEOUT    10
@@ -77,13 +79,15 @@ a lot of data that needs to be copied, this should be set high. */
 /* TCP receive window. */
 #define TCP_WND                 (2*TCP_MSS)
 
+/* ---------- ARP options ----------- */
+#define LWIP_ARP                1
 
 /* ---------- ICMP options ---------- */
-#define LWIP_ICMP                       1
+#define LWIP_ICMP               1
 
 
 /* ---------- DHCP options ---------- */
-#define LWIP_DHCP               0
+#define LWIP_DHCP               1
 
 
 /* ---------- UDP options ---------- */
@@ -155,7 +159,7 @@ The STM32F7xxallows computing and verifying the IP, UDP, TCP and ICMP checksums 
 /**
  * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
  */
-#define LWIP_NETCONN                    0
+#define LWIP_NETCONN                    1
 
 /*
    ------------------------------------
@@ -165,8 +169,22 @@ The STM32F7xxallows computing and verifying the IP, UDP, TCP and ICMP checksums 
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
-#define LWIP_SOCKET                     0
+#define LWIP_SOCKET                     1
 
+/*
+   ---------------------------------
+   ---------- OS options ----------
+   ---------------------------------
+*/
+
+#define TCPIP_THREAD_NAME              "TCP/IP"
+#define TCPIP_THREAD_STACKSIZE          (configMINIMAL_STACK_SIZE * 8)
+#define TCPIP_MBOX_SIZE                 20
+#define DEFAULT_UDP_RECVMBOX_SIZE       6
+#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define DEFAULT_ACCEPTMBOX_SIZE         6
+#define DEFAULT_THREAD_STACKSIZE        (configMINIMAL_STACK_SIZE)
+#define TCPIP_THREAD_PRIO               (1)
 #endif /* __LWIPOPTS_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

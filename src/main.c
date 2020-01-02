@@ -47,28 +47,90 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
+#include "tasks_def.h"
+#include "hw_delay.h"
+
+TaskHandle_t init_handle = NULL;
+TaskHandle_t ethif_in_handle = NULL;
+TaskHandle_t link_state_handle = NULL;
+TaskHandle_t dhcp_fsm_handle = NULL;
+
+EventGroupHandle_t eg_task_started = NULL;
 
 struct netif gnetif;
 
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void netif_setup();
-void init_task(void *param);
+void init_task(void *arg);
 
-void init_task(void *param)
+void init_task(void *arg)
 {
     GPIO_InitTypeDef gpio;
-    (void)param;
+    BaseType_t status;
+    struct netif *netif = (struct netif *)arg;
 
     __HAL_RCC_GPIOD_CLK_ENABLE();
 
+    eg_task_started = xEventGroupCreate();
+    configASSERT(eg_task_started);
+
+    xEventGroupSetBits(eg_task_started, EG_INIT_STARTED);
+
     /* Initialize LCD */
     lcd_init();
+    lcd_clear();
+    lcd_print_string("Initializing...");
 
     /* Create TCP/IP stack thread */
     tcpip_init(NULL, NULL);
+
     /* Initialize PHY */
     netif_setup();
+
+    status = xTaskCreate(
+                link_state,
+                "link_st",
+                LINK_STATE_TASK_STACK_SIZE,
+                (void *)netif,
+                LINK_STATE_TASK_PRIO,
+                &link_state_handle);
+
+    configASSERT(status);
+
+    status = xTaskCreate(
+                dhcp_fsm,
+                "dhcp_fsm",
+                DHCP_FSM_TASK_STACK_SIZE,
+                (void *)netif,
+                DHCP_FSM_TASK_PRIO,
+                &dhcp_fsm_handle);
+
+    configASSERT(status);
+
+    status = xTaskCreate(
+                ethernetif_input,
+                "ethif_in",
+                ETHIF_IN_TASK_STACK_SIZE,
+                (void *)netif,
+                ETHIF_IN_TASK_PRIO,
+                &ethif_in_handle);
+
+    configASSERT(status);
+
+    /* Wait for all tasks initialization */
+    xEventGroupWaitBits(
+            eg_task_started,
+            (EG_INIT_STARTED | EG_ETHERIF_IN_STARTED | EG_LINK_STATE_STARTED | EG_DHCP_FSM_STARTED),
+            pdFALSE,
+            pdTRUE,
+            portMAX_DELAY);
+
+    if (netif_is_up(netif))
+    {
+        /* Start DHCP address request */
+        ethernetif_dhcp_start();
+    }
 
     gpio.Mode = GPIO_MODE_OUTPUT_PP;
     gpio.Pull = GPIO_NOPULL;
@@ -78,6 +140,13 @@ void init_task(void *param)
 
     for (;;)
     {
+        if (!netif_is_link_up(netif))
+        {
+            lcd_clear();
+            lcd_print_string_at("Link:", 0, 0);
+            lcd_print_string_at("down", 0, 1);
+        }
+
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
         vTaskDelay(500);
     }
@@ -90,18 +159,22 @@ void init_task(void *param)
   */
 int main(void)
 {
+    BaseType_t status;
+
     HAL_Init();
 
     /* Configure the system clock to 168 MHz */
     SystemClock_Config();
 
-    xTaskCreate(
-            init_task,
-            "init",
-            (configMINIMAL_STACK_SIZE * 2),
-            (void *)NULL,
-            (3),
-            NULL);
+    status = xTaskCreate(
+                    init_task,
+                    "init",
+                    INIT_TASK_STACK_SIZE,
+                    (void *)&gnetif,
+                    INIT_TASK_PRIO,
+                    &init_handle);
+
+    configASSERT(status);
 
     vTaskStartScheduler();
 

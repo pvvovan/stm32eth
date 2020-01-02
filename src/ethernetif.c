@@ -15,15 +15,6 @@
 #define IFNAME0 'G'
 #define IFNAME1 'L'
 
-#define ETHIF_IN_TASK_PRIO          (tskIDLE_PRIORITY + 3)
-#define ETHIF_IN_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 4)
-
-#define LINK_STATE_TASK_PRIO        (tskIDLE_PRIORITY + 4)
-#define LINK_STATE_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE * 2)
-
-#define DHCP_FSM_TASK_PRIO          (tskIDLE_PRIORITY + 2)
-#define DHCP_FSM_TASK_STACK_SIZE    (configMINIMAL_STACK_SIZE * 2)
-
 #define DHCP_FSM_DELAY_MS           (500)
 #define DHCP_MAX_TRIES              (4)
 
@@ -61,11 +52,8 @@ static volatile DHCP_STATE_E dhcp_state = E_DHCP_OFF;
 static void low_level_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static struct pbuf * low_level_input(struct netif *netif);
-void ethernetif_notify_conn_changed(struct netif *netif);
+static void ethernetif_notify_conn_changed(struct netif *netif);
 static void ethernetif_rx_complete_cb(ETH_HandleTypeDef *heth);
-void ethernetif_input(void * const arg);
-void link_state(void * const arg);
-void dhcp_fsm(void * const arg);
 static void dhcp_process(struct netif *netif);
 static void dhcp_set_state(DHCP_STATE_E new_state);
 
@@ -160,7 +148,6 @@ static void low_level_init(struct netif *netif)
   */
 err_t ethernetif_init(struct netif *netif)
 {
-    BaseType_t status;
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
 #if LWIP_NETIF_HOSTNAME
@@ -180,35 +167,6 @@ err_t ethernetif_init(struct netif *netif)
     /* initialize the hardware */
     low_level_init(netif);
 
-    status = xTaskCreate(
-                link_state,
-                "link_st",
-                LINK_STATE_TASK_STACK_SIZE,
-                (void *)netif,
-                LINK_STATE_TASK_PRIO,
-                NULL);
-
-    configASSERT(status);
-
-    status = xTaskCreate(
-                dhcp_fsm,
-                "dhcp_fsm",
-                DHCP_FSM_TASK_STACK_SIZE,
-                (void *)netif,
-                DHCP_FSM_TASK_PRIO,
-                NULL);
-
-    configASSERT(status);
-
-    status = xTaskCreate(
-                ethernetif_input,
-                "ethif_in",
-                ETHIF_IN_TASK_STACK_SIZE,
-                (void *)netif,
-                ETHIF_IN_TASK_PRIO,
-                NULL);
-
-    configASSERT(status);
 
     return ERR_OK;
 }
@@ -404,6 +362,8 @@ void link_state(void * const arg)
     link_irq_sem = xSemaphoreCreateBinary();
     configASSERT(link_irq_sem != NULL);
 
+    xEventGroupSetBits(eg_task_started, EG_LINK_STATE_STARTED);
+
     for (;;)
     {
         if (xSemaphoreTake(link_irq_sem, portMAX_DELAY) == pdTRUE)
@@ -450,7 +410,8 @@ static void dhcp_process(struct netif *netif)
             ip_addr_set_zero_ip4(&netif->gw);
             dhcp_set_state(E_DHCP_WAIT_ADDRESS);
             dhcp_start(netif);
-            lcd_print_string_at("DHCP:      ", 0, 0);
+            lcd_clear();
+            lcd_print_string_at("DHCP:", 0, 0);
             lcd_print_string_at("starting...", 0, 1);
             break;
         }
@@ -462,7 +423,8 @@ static void dhcp_process(struct netif *netif)
                 dhcp_set_state(E_DHCP_ADDRESS_ASSIGNED);
 
                 sprintf(str, "%s",inet_ntoa(netif->ip_addr));
-                lcd_print_string_at("DHCP:      ", 0, 0);
+                lcd_clear();
+                lcd_print_string_at("DHCP:", 0, 0);
                 lcd_print_string_at(str, 0, 1);
             }
             else
@@ -484,12 +446,14 @@ static void dhcp_process(struct netif *netif)
                     netif_set_addr(netif, &ipaddr, &netmask, &gw);
                     
                     sprintf(str, "%s",inet_ntoa(netif->ip_addr));
-                    lcd_print_string_at("Static:       ", 0, 0);
+                    lcd_clear();
+                    lcd_print_string_at("Static:", 0, 0);
                     lcd_print_string_at(str, 0, 1);
                 }
                 else
                 {
                     sprintf(str, "retry: %d    ", dhcp->tries);
+                    lcd_clear();
                     lcd_print_string_at("DHCP:      ", 0, 0);
                     lcd_print_string_at(str, 0, 1);
                 }
@@ -502,9 +466,6 @@ static void dhcp_process(struct netif *netif)
             /* Stop DHCP */
             dhcp_stop(netif);
             dhcp_set_state(E_DHCP_OFF);
-            
-            lcd_print_string_at("Link:      ", 0, 0);
-            lcd_print_string_at("down       ", 0, 1);
             break;
         }
 
@@ -513,7 +474,6 @@ static void dhcp_process(struct netif *netif)
         case E_DHCP_TIMEOUT:
             /* no break here */
         case E_DHCP_OFF:
-            /* no break here */
         {
             break;
         }
@@ -532,8 +492,8 @@ void dhcp_fsm(void * const arg)
     dhcp_state_mut = xSemaphoreCreateMutex();
     configASSERT(dhcp_state_mut != NULL);
 
-    /* Start DHCP address request */
-    ethernetif_dhcp_start();
+    /* Notify init task that DHCP task has been started */
+    xEventGroupSetBits(eg_task_started, EG_DHCP_FSM_STARTED);
 
     for (;;)
     {
@@ -559,6 +519,8 @@ void ethernetif_input(void * const arg)
 
     eth_irq_sem = xSemaphoreCreateBinary();
     configASSERT(eth_irq_sem != NULL);
+
+    xEventGroupSetBits(eg_task_started, EG_ETHERIF_IN_STARTED);
 
     for (;;)
     {
@@ -657,7 +619,7 @@ error :
   * @param  netif: the network interface
   * @retval None
   */
-void ethernetif_notify_conn_changed(struct netif *netif)
+static void ethernetif_notify_conn_changed(struct netif *netif)
 {
     if (netif_is_link_up(netif))
     {

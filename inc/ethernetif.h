@@ -24,5 +24,8 @@ err_t ethernetif_init(struct netif *netif);
 void ethernetif_phy_irq();
 void ethernetif_link_update(struct netif *netif);
 void ethernetif_dhcp_start();
+void link_state(void * const arg);
+void dhcp_fsm(void * const arg);
+void ethernetif_input(void * const arg);
 
 #endif /* ETHERNETIF_H */

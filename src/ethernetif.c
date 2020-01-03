@@ -16,7 +16,7 @@
 #define IFNAME1 'L'
 
 #define DHCP_FSM_DELAY_MS           (500)
-#define DHCP_MAX_TRIES              (4)
+#define DHCP_MAX_TRIES              (3)
 
 #define STRING_BUF_LEN              (21)
 

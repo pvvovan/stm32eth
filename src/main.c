@@ -288,8 +288,6 @@ static void netif_setup()
     /* Set the link callback function, this function is called on change of link status */
     netif_set_link_callback(&gnetif, ethernetif_link_update);
 
-    lcd_clear();
-
     if (netif_is_link_up(&gnetif))
     {
         /* When the netif is fully configured this function must be called */

@@ -89,11 +89,7 @@ static void low_level_init(struct netif *netif)
     uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
 
     phy_status = ksz8081_init((ETH_HandleTypeDef *)&h_eth, macaddress);
-    if (phy_status == E_PHY_STATUS_ERROR)
-    {
-        return;
-    }
-    else if (phy_status == E_PHY_STATUS_OK)
+    if (phy_status == E_PHY_STATUS_OK)
     {
         netif->flags |= NETIF_FLAG_LINK_UP;
     }
@@ -408,8 +404,8 @@ static void dhcp_process(struct netif *netif)
             ip_addr_set_zero_ip4(&netif->ip_addr);
             ip_addr_set_zero_ip4(&netif->netmask);
             ip_addr_set_zero_ip4(&netif->gw);
-            dhcp_set_state(E_DHCP_WAIT_ADDRESS);
             dhcp_start(netif);
+            dhcp_set_state(E_DHCP_WAIT_ADDRESS);
             lcd_clear();
             lcd_print_string_at("DHCP:", 0, 0);
             lcd_print_string_at("starting...", 0, 1);
@@ -429,7 +425,7 @@ static void dhcp_process(struct netif *netif)
             }
             else
             {
-                dhcp = (struct dhcp *)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP);
+                dhcp = netif_dhcp_data(netif);
     
                 /* DHCP timeout */
                 if (dhcp->tries > DHCP_MAX_TRIES)
@@ -452,9 +448,9 @@ static void dhcp_process(struct netif *netif)
                 }
                 else
                 {
-                    sprintf(str, "retry: %d    ", dhcp->tries);
+                    sprintf(str, "retry: %d", dhcp->tries);
                     lcd_clear();
-                    lcd_print_string_at("DHCP:      ", 0, 0);
+                    lcd_print_string_at("DHCP:", 0, 0);
                     lcd_print_string_at(str, 0, 1);
                 }
             }
@@ -623,13 +619,13 @@ static void ethernetif_notify_conn_changed(struct netif *netif)
 {
     if (netif_is_link_up(netif))
     {
+        netif_set_up(netif);
         dhcp_set_state(E_DHCP_START);
-        netif_set_up(netif);     
     }
     else
     {
-        dhcp_set_state(E_DHCP_LINK_DOWN);
         netif_set_down(netif);
+        dhcp_set_state(E_DHCP_LINK_DOWN);
     }
 }
 

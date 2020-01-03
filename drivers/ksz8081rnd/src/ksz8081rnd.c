@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <string.h>
 #include "ksz8081rnd.h"
+#include "hw_delay.h"
 
-#define KSZ8081_RESET_ASSERT_DELAY      (84000)
-#define KSZ8081_BOOTUP_DELAY            (16800)
+#define KSZ8081_RESET_ASSERT_DELAY_US   (500)
+#define KSZ8081_BOOTUP_DELAY_US         (100)
 
 static void ksz8081_gpio_init(ETH_HandleTypeDef *heth);
 static int ksz8081_bootstrap();
@@ -95,12 +96,11 @@ static int ksz8081_bootstrap()
     /* Set PHY address to 0x03 */
     HAL_GPIO_WritePin(RMII_CSR_DV_PORT, RMII_CSR_DV_PIN, GPIO_PIN_SET);
     /* Reset pin should be asserted for minimum 500 us */
-    for (int i = 0; i < KSZ8081_RESET_ASSERT_DELAY; ++i) { ; }
-
+    delay_us(KSZ8081_RESET_ASSERT_DELAY_US);
     /* Bootup PHY */
     HAL_GPIO_WritePin(RMII_PHY_RST_PORT, RMII_PHY_RST_PIN, GPIO_PIN_SET);
     /* Bootup delay should be minimum 100 us */
-    for (int i = 0; i < KSZ8081_BOOTUP_DELAY; ++i) { ; }
+    delay_us(KSZ8081_BOOTUP_DELAY_US);
 
     HAL_GPIO_DeInit(RMII_CSR_DV_PORT, RMII_CSR_DV_PIN);
 

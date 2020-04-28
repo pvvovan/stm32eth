@@ -30,6 +30,7 @@ set(LOCAL_SRCS
     "stm32f4xx_it.c"
     "system_stm32f4xx.c"
     "ethernetif.c"
+    "echo_server.c"
     "syscalls.c"
     "sysmem.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/arch/sys_arch.c"

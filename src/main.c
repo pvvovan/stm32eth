@@ -42,6 +42,7 @@
 #include "lwip/tcpip.h"
 #include "netif/etharp.h"
 #include "ethernetif.h"
+#include "echo_server.h"
 #include "ksz8081rnd.h"
 #include "wh1602.h"
 #include "FreeRTOS.h"
@@ -54,6 +55,7 @@ TaskHandle_t init_handle = NULL;
 TaskHandle_t ethif_in_handle = NULL;
 TaskHandle_t link_state_handle = NULL;
 TaskHandle_t dhcp_fsm_handle = NULL;
+TaskHandle_t echo_server_handle = NULL;
 
 EventGroupHandle_t eg_task_started = NULL;
 
@@ -118,10 +120,21 @@ void init_task(void *arg)
 
     configASSERT(status);
 
+    status = xTaskCreate(
+                echo_server,
+                "echo_srv",
+                ECHO_SERVER_TASK_STACK_SIZE,
+                (void *)netif,
+                ECHO_SERVER_TASK_PRIO,
+                &echo_server_handle);
+
+    configASSERT(status);
+
     /* Wait for all tasks initialization */
     xEventGroupWaitBits(
             eg_task_started,
-            (EG_INIT_STARTED | EG_ETHERIF_IN_STARTED | EG_LINK_STATE_STARTED | EG_DHCP_FSM_STARTED),
+            (EG_INIT_STARTED | EG_ETHERIF_IN_STARTED | EG_LINK_STATE_STARTED | 
+                EG_DHCP_FSM_STARTED | EG_ECHO_SERVER_STARTED),
             pdFALSE,
             pdTRUE,
             portMAX_DELAY);

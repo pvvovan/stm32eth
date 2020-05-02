@@ -9,14 +9,15 @@
 #include "lwip/mem.h"
 #include "echo_server.h"
 
-#define RX_BUF_LEN          (1024)
+#define BUF_LEN                 (1024)
 
-static uint8_t rx_buf[RX_BUF_LEN];
+static uint8_t buf[BUF_LEN];
 
 void echo_server(void * const arg)
 {
     int listenfd;
-    int clientfd;
+    fd_set readfds;
+    int maxfd;
     int err;
     int read_len;
     struct sockaddr_in server_addr;
@@ -46,27 +47,52 @@ void echo_server(void * const arg)
         LWIP_ASSERT("echo_server(): Socket listen failed", 0);
     }
 
+    FD_ZERO(&readfds);
+    FD_SET(listenfd, &readfds);
+    maxfd = listenfd;
+
     for (;;)
     {
-        clientfd = lwip_accept(
-                    listenfd,
-                    (struct sockaddr *)&client_addr,
-                    &client_len);
-
-        if (clientfd < 0)
+        err = select((maxfd + 1), &readfds, NULL, NULL, NULL);
+        if (err < 0)
             continue;
 
-        memset(rx_buf, 0, RX_BUF_LEN);
+        for (int fd = 0; fd < maxfd; ++fd) 
+        {
+            if (FD_ISSET(fd, &readfds)) 
+            {
+                if (fd == listenfd) 
+                {
+                    int clientfd = lwip_accept(
+                                        listenfd, 
+                                        (struct sockaddr *)&client_addr,
+                                        &client_len);
+                    if (clientfd >= 0) 
+                    {
+                        FD_SET(clientfd, &readfds);
+                        if (clientfd > maxfd) 
+                        {
+                            maxfd = clientfd;
+                        }
+                    }
+                } 
+                else 
+                {
+                    memset(buf, 0, BUF_LEN);
 
-        read_len = lwip_read(clientfd, rx_buf, RX_BUF_LEN);
-        if (read_len <= 0) {
-            lwip_close(clientfd);
-            continue;
+                    read_len = lwip_read(fd, buf, BUF_LEN);
+                    if (read_len > 0) 
+                    {
+                        lwip_write(fd, buf, read_len);
+                    } 
+                    else if (read_len <= 0) 
+                    {
+                        lwip_close(fd);
+                        FD_CLR(fd, &readfds);
+                    }
+                }
+            }
         }
-
-        lwip_write(clientfd, rx_buf, read_len);
-
-        lwip_close(clientfd);
     }
 }
 

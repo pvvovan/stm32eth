@@ -1,6 +1,5 @@
 TARGET = f407disc1
 DEBUG = 1
-OPT = -O0
 
 BUILD_DIR = build
 
@@ -59,6 +58,10 @@ CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wconversion -Wsign-conversion -
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g3 -gdwarf-5
+OPT = -O0
+else
+CFLAGS += -g0
+OPT = -O2
 endif
 
 # Generate dependency information
@@ -68,8 +71,7 @@ LDSCRIPT = Src/STM32F407VGTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm
-LIBDIR =
-LDFLAGS = --specs=nano.specs $(MCU) -Wl,--no-warn-rwx-segments -T $(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = --specs=nano.specs $(MCU) -Wl,--no-warn-rwx-segments -T $(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin

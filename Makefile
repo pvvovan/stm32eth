@@ -8,7 +8,8 @@ C_SOURCES = \
 Src/main.c \
 cmsis_device_f4/Source/Templates/system_stm32f4xx.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
-stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c \
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_rcc.c
 
 ASM_SOURCES = \
 cmsis_device_f4/Source/Templates/gcc/startup_stm32f407xx.s
@@ -54,7 +55,7 @@ C_INCLUDES = \
 -I Inc
 
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -Wextra -Wpedantic -std=c99 -fdata-sections -ffunction-sections
+CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wconversion -Wsign-conversion -Wall -Wextra -Wpedantic -std=c99 -fdata-sections -ffunction-sections
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g3 -gdwarf-5

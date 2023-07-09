@@ -51,9 +51,22 @@ int main()
 	/* Configure the system clock to 168 MHz */
 	SystemClock_Config();
 
+	__HAL_RCC_GPIOD_CLK_ENABLE();
+	GPIO_InitTypeDef gpio = { 0 };
+	gpio.Mode = GPIO_MODE_OUTPUT_PP;
+	gpio.Pull = GPIO_NOPULL;
+
+	gpio.Pin = GPIO_PIN_13;
+	HAL_GPIO_Init(GPIOD, &gpio);
+
+	gpio.Pin = GPIO_PIN_15;
+	HAL_GPIO_Init(GPIOD, &gpio);
+	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+
 	while (1) {
-		static long val;
-		val++;
+		HAL_Delay(500);
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 	}
 }
 

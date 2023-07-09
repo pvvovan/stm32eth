@@ -6,7 +6,9 @@ BUILD_DIR = build
 
 C_SOURCES = \
 Src/main.c \
-cmsis_device_f4/Source/Templates/system_stm32f4xx.c
+cmsis_device_f4/Source/Templates/system_stm32f4xx.c \
+stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c
 
 ASM_SOURCES = \
 cmsis_device_f4/Source/Templates/gcc/startup_stm32f407xx.s

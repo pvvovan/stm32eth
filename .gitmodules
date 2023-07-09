@@ -1,3 +1,6 @@
 [submodule "cmsis_device_f4"]
 	path = cmsis_device_f4
 	url = https://github.com/STMicroelectronics/cmsis_device_f4.git
+[submodule "stm32f4xx_hal_driver"]
+	path = stm32f4xx_hal_driver
+	url = https://github.com/STMicroelectronics/stm32f4xx_hal_driver.git

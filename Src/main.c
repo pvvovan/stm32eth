@@ -2,7 +2,7 @@
 
 int main()
 {
-	asm volatile ("bkpt #0" : : : "memory");
+	__asm volatile ("bkpt #0" : : : "memory");
 
 	HAL_Init();
 

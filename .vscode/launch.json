@@ -1,0 +1,32 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "ST-Link",
+			"cwd": "${workspaceFolder}",
+			"executable": "./build/f407disc1.elf",
+			"request": "launch",
+			"type": "cortex-debug",
+			"runToEntryPoint": "main",
+			"servertype": "stlink",
+			"svdFile": "docs/STM32F407.svd"
+		},
+		{
+			"name": "openocd",
+			"cwd": "${workspaceFolder}",
+			"executable": "./build/f407disc1.elf",
+			"request": "launch",
+			"type": "cortex-debug",
+			"runToEntryPoint": "main",
+			"servertype": "openocd",
+			"svdFile": "docs/STM32F407.svd",
+			"configFiles": [
+				"interface/stlink.cfg",
+				"target/stm32f4x.cfg"
+			]
+		}
+	]
+}

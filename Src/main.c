@@ -1,4 +1,8 @@
 int main()
 {
-	while(1) { }
+	asm volatile ("bkpt #0" : : : "memory");
+	while (1) {
+		static long val;
+		val++;
+	}
 }

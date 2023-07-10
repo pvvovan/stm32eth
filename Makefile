@@ -9,7 +9,8 @@ cmsis_device_f4/Source/Templates/system_stm32f4xx.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_rcc.c \
-stm32f4xx_hal_driver/Src/stm32f4xx_hal_gpio.c
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_gpio.c \
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_eth.c
 
 ASM_SOURCES = \
 cmsis_device_f4/Source/Templates/gcc/startup_stm32f407xx.s

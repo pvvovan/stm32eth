@@ -2,7 +2,24 @@
 #include "hw_delay.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stm32f4xx_hal_rng.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/timeouts.h"
+#include "lwip/inet.h"
+#include "lwip/tcpip.h"
 
+
+static RNG_HandleTypeDef rng_handle;
+
+uint32_t rand_wrapper(void)
+{
+	uint32_t random = 0;
+
+	(void)HAL_RNG_GenerateRandomNumber(&rng_handle, &random);
+
+	return random;
+}
 
 static void Error_Handler(void)
 {
@@ -207,6 +224,10 @@ static void init_task(void *arg)
 	HAL_GPIO_Init(GPIOD, &gpio);
 	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 
+	(void)HAL_RNG_Init(&rng_handle);
+	/* Create TCP/IP stack thread */
+	tcpip_init(NULL, NULL);
+
 	for ( ; ; ) {
 		vTaskDelay(500);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
@@ -223,18 +244,13 @@ int main()
 	/* Configure the system clock to 168MHz */
 	SystemClock_Config();
 
-	xTaskCreate(init_task,
-                    "init",
-                    2048,
-                    NULL,
-                    3,
-                    NULL);
+	xTaskCreate(init_task, "init", 2048, NULL, 3, NULL);
 	vTaskStartScheduler();
 }
 
 uint32_t HAL_GetTick(void)
 {
-    return xTaskGetTickCount();
+	return xTaskGetTickCount();
 }
 
 void SysTick_Handler(void)

@@ -5,12 +5,16 @@ BUILD_DIR = build
 
 C_SOURCES = \
 Src/main.c \
+Src/sys_arch.c \
+Src/syscalls.c \
+Src/sysmem.c \
 cmsis_device_f4/Source/Templates/system_stm32f4xx.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_rcc.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_gpio.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_eth.c \
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_rng.c \
 FreeRTOS-Kernel/croutine.c \
 FreeRTOS-Kernel/event_groups.c \
 FreeRTOS-Kernel/list.c \
@@ -64,7 +68,8 @@ C_INCLUDES = \
 -I stm32f4xx_hal_driver/Inc \
 -I Inc \
 -I FreeRTOS-Kernel/include \
--I FreeRTOS-Kernel/portable/GCC/ARM_CM4F
+-I FreeRTOS-Kernel/portable/GCC/ARM_CM4F \
+-I lwip/src/include
 
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wconversion -Wsign-conversion -Wall -Wextra -Wpedantic -std=c99 -fdata-sections -ffunction-sections
@@ -83,8 +88,8 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 LDSCRIPT = Src/STM32F407VGTx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm
-LDFLAGS = --specs=nano.specs $(MCU) -T $(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LIBS = -lc -lm -LlwIPbuild -llwipcore
+LDFLAGS = --specs=nano.specs $(MCU) -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
@@ -112,12 +117,12 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(HEX) $< $@
-	
+
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
-	$(BIN) $< $@	
-	
+	$(BIN) $< $@
+
 $(BUILD_DIR):
-	mkdir $@		
+	mkdir $@
 
 
 #######################################

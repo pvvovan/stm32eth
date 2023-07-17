@@ -73,7 +73,7 @@ LDSCRIPT = Src/STM32F407VGTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm
-LDFLAGS = --specs=nano.specs $(MCU) -Wl,--no-warn-rwx-segments -T $(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = --specs=nano.specs $(MCU) -T $(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin

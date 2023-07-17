@@ -26,7 +26,8 @@
 			"configFiles": [
 				"interface/stlink.cfg",
 				"target/stm32f4x.cfg"
-			]
+			],
+			"gdbPath": "gdb-multiarch"
 		}
 	]
 }

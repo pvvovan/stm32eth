@@ -13,7 +13,7 @@ stm32f4xx_hal_driver/Src/stm32f4xx_hal_gpio.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_eth.c
 
 ASM_SOURCES = \
-cmsis_device_f4/Source/Templates/gcc/startup_stm32f407xx.s
+Src/startup_stm32f407xx.s
 
 PREFIX = arm-none-eabi-
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)

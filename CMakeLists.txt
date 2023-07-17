@@ -18,7 +18,7 @@ set (LWIP_INCLUDE_DIRS
 
 include(${LWIP_DIR}/src/Filelists.cmake)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -std=gnu11 -g3 -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
+set(CMAKE_C_FLAGS "-mcpu=cortex-m4 -std=c99 -gdwarf-5 -g3 -O0 -ffunction-sections -fdata-sections -Wall -Wextra --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb")
 
 add_library(${PROJECT_NAME} empty.c)
 target_link_libraries(${PROJECT_NAME} lwipcore)

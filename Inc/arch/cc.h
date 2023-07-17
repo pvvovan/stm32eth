@@ -48,6 +48,8 @@
 #define LWIP_PLATFORM_ASSERT(x) do {printf("Assertion \"%s\" failed at line %d in %s\n", \
                                      x, __LINE__, __FILE__); } while(0)
 
+uint32_t rand_wrapper(void);
+
 /* Define random number generator function */
 #define LWIP_RAND() ((u32_t)rand_wrapper())
 //

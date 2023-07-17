@@ -10,7 +10,16 @@ stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_rcc.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_gpio.c \
-stm32f4xx_hal_driver/Src/stm32f4xx_hal_eth.c
+stm32f4xx_hal_driver/Src/stm32f4xx_hal_eth.c \
+FreeRTOS-Kernel/croutine.c \
+FreeRTOS-Kernel/event_groups.c \
+FreeRTOS-Kernel/list.c \
+FreeRTOS-Kernel/queue.c \
+FreeRTOS-Kernel/stream_buffer.c \
+FreeRTOS-Kernel/tasks.c \
+FreeRTOS-Kernel/timers.c \
+FreeRTOS-Kernel/portable/GCC/ARM_CM4F/port.c \
+FreeRTOS-Kernel/portable/MemMang/heap_1.c
 
 ASM_SOURCES = \
 Src/startup_stm32f407xx.s
@@ -53,7 +62,9 @@ C_INCLUDES = \
 -I cmsis_device_f4/Include \
 -I CMSIS_5/CMSIS/Core/Include \
 -I stm32f4xx_hal_driver/Inc \
--I Inc
+-I Inc \
+-I FreeRTOS-Kernel/include \
+-I FreeRTOS-Kernel/portable/GCC/ARM_CM4F
 
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wconversion -Wsign-conversion -Wall -Wextra -Wpedantic -std=c99 -fdata-sections -ffunction-sections

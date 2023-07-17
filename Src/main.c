@@ -1,5 +1,7 @@
 #include "stm32f4xx_hal.h"
 #include "hw_delay.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 
 static void Error_Handler(void)
@@ -177,15 +179,9 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 	}
 }
 
-int main()
+static void init_task(void *arg)
 {
-	__asm volatile ("bkpt #0" : : : "memory");
-
-	HAL_Init();
-
-	/* Configure the system clock to 168MHz */
-	SystemClock_Config();
-
+	(void)arg;
 	static ETH_HandleTypeDef heth = { 0 };
 	static uint8_t MACAddr[6] = { 0x00, 0x80, 0xE1, 0x00, 0x00, 0x00 };
 	static ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
@@ -212,10 +208,33 @@ int main()
 	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 
 	for ( ; ; ) {
-		HAL_Delay(500);
+		vTaskDelay(500);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 	}
+}
+
+int main()
+{
+	__asm volatile ("bkpt #0" : : : "memory");
+
+	HAL_Init();
+
+	/* Configure the system clock to 168MHz */
+	SystemClock_Config();
+
+	xTaskCreate(init_task,
+                    "init",
+                    2048,
+                    NULL,
+                    3,
+                    NULL);
+	vTaskStartScheduler();
+}
+
+uint32_t HAL_GetTick(void)
+{
+    return xTaskGetTickCount();
 }
 
 void SysTick_Handler(void)

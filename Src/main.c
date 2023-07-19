@@ -265,10 +265,14 @@ void tim2_init(void)
 {
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 	__asm volatile ("dmb" : : : "memory");
-	TIM2->PSC = 16800 - 1; // 10kHz counter
+	while ((RCC->APB1ENR & RCC_APB1ENR_TIM2EN) == 0) { }
+	__asm volatile ("dmb" : : : "memory");
+
+	TIM2->PSC = 1680 - 1; // 100kHz counter
 	TIM2->EGR |= TIM_EGR_UG;
 	TIM2->ARR = 0xFFFFFFFFuL;
-	__asm volatile ("isb" : : : "memory");
+	__asm volatile ("dmb" : : : "memory");
+
 	TIM2->CR1 |= TIM_CR1_CEN;
 }
 

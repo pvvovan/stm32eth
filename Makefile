@@ -23,7 +23,7 @@ FreeRTOS-Kernel/stream_buffer.c \
 FreeRTOS-Kernel/tasks.c \
 FreeRTOS-Kernel/timers.c \
 FreeRTOS-Kernel/portable/GCC/ARM_CM4F/port.c \
-FreeRTOS-Kernel/portable/MemMang/heap_1.c
+FreeRTOS-Kernel/portable/MemMang/heap_4.c
 
 ASM_SOURCES = \
 Src/startup_stm32f407xx.s

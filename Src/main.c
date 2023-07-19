@@ -229,9 +229,12 @@ static void init_task(void *arg)
 	tcpip_init(NULL, NULL);
 
 	for ( ; ; ) {
-		vTaskDelay(500);
+		vTaskDelay(600);
+		HAL_Delay(400);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+		static volatile char pcWriteBuffer[1024];
+		vTaskGetRunTimeStats((char *)&pcWriteBuffer[0]);
 	}
 }
 
@@ -256,6 +259,22 @@ uint32_t HAL_GetTick(void)
 void SysTick_Handler(void)
 {
 	HAL_IncTick();
+}
+
+void tim2_init(void)
+{
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+	__asm volatile ("dmb" : : : "memory");
+	TIM2->PSC = 16800 - 1; // 10kHz counter
+	TIM2->EGR |= TIM_EGR_UG;
+	TIM2->ARR = 0xFFFFFFFFuL;
+	__asm volatile ("isb" : : : "memory");
+	TIM2->CR1 |= TIM_CR1_CEN;
+}
+
+uint32_t tim2_cnt(void)
+{
+	return TIM2->CNT;
 }
 
 void HardFault_Handler(void)

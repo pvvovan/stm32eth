@@ -11,6 +11,9 @@
 
 
 static RNG_HandleTypeDef rng_handle;
+static struct netif s_netif;
+static ETH_HandleTypeDef s_heth = { 0 };
+
 
 uint32_t rand_wrapper(void)
 {
@@ -128,8 +131,13 @@ static void ksz8081_bootstrap(void)
 #define PHY_LINKMD_STATUS                   ((uint16_t)0x001D)
 #define PHY_CONTROL1                        ((uint16_t)0x001E)
 #define PHY_CONTROL2                        ((uint16_t)0x001F)
+
+/* PHY Masks */
 #define PHY_REF_CLOCK_SELECT_MASK           ((uint16_t)0x0080)
 #define PHY_REF_CLOCK_SELECT_25MHZ          ((uint16_t)0x0080)
+#define PHY_LINK_INT_UP_OCCURRED            ((uint16_t)0x0001)
+#define PHY_LINK_INT_DOWN_OCCURED           ((uint16_t)0x0004)
+
 
 void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 {
@@ -196,21 +204,40 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 	}
 }
 
+static void link_state(void *const arg)
+{
+	uint32_t regval = 0;
+	(void)arg;
+
+	for ( ; ; ) {
+		vTaskDelay(10);
+		HAL_StatusTypeDef status = HAL_ETH_ReadPHYRegister(&s_heth, 0, PHY_INTERRUPT_STATUS, &regval);
+		if (status == HAL_OK) {
+			if (regval & PHY_LINK_INT_UP_OCCURRED) {
+				netif_set_link_up(&s_netif);
+			} else if (regval & PHY_LINK_INT_DOWN_OCCURED) {
+				netif_set_link_down(&s_netif);
+			} else {
+				/* No action */
+			}
+		}
+	}
+}
+
 static void init_task(void *arg)
 {
 	(void)arg;
-	static ETH_HandleTypeDef heth = { 0 };
 	static uint8_t MACAddr[6] = { 0x00, 0x80, 0xE1, 0x00, 0x00, 0x00 };
 	static ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
 	static ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT]; /* Ethernet Tx DMA Descriptors */
 
-	heth.Instance = ETH;
-	heth.Init.MACAddr = &MACAddr[0];
-	heth.Init.MediaInterface = HAL_ETH_RMII_MODE;
-	heth.Init.TxDesc = DMATxDscrTab;
-	heth.Init.RxDesc = DMARxDscrTab;
-	heth.Init.RxBuffLen = 1536;
-	HAL_ETH_Init(&heth);
+	s_heth.Instance = ETH;
+	s_heth.Init.MACAddr = &MACAddr[0];
+	s_heth.Init.MediaInterface = HAL_ETH_RMII_MODE;
+	s_heth.Init.TxDesc = DMATxDscrTab;
+	s_heth.Init.RxDesc = DMARxDscrTab;
+	s_heth.Init.RxBuffLen = 1536;
+	HAL_ETH_Init(&s_heth);
 
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 	GPIO_InitTypeDef gpio = { 0 };
@@ -227,6 +254,8 @@ static void init_task(void *arg)
 	(void)HAL_RNG_Init(&rng_handle);
 	/* Create TCP/IP stack thread */
 	tcpip_init(NULL, NULL);
+
+	xTaskCreate(link_state, "link_st", 128, NULL, 3, NULL);
 
 	for ( ; ; ) {
 		vTaskDelay(600);

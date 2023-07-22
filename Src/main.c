@@ -8,12 +8,19 @@
 #include "lwip/timeouts.h"
 #include "lwip/inet.h"
 #include "lwip/tcpip.h"
+#include "netif/ethernet.h"
+#include "lwip/etharp.h"
+#include "lwip/dhcp.h"
+#include <string.h>
 
 
 static RNG_HandleTypeDef rng_handle;
+static ETH_HandleTypeDef s_heth;
+static ETH_TxPacketConfig TxConfig;
 static struct netif s_netif;
-static ETH_HandleTypeDef s_heth = { 0 };
-
+static ip4_addr_t s_ipaddr;
+static ip4_addr_t s_netmask;
+static ip4_addr_t s_gw;
 
 uint32_t rand_wrapper(void)
 {
@@ -214,14 +221,147 @@ static void link_state(void *const arg)
 		HAL_StatusTypeDef status = HAL_ETH_ReadPHYRegister(&s_heth, 0, PHY_INTERRUPT_STATUS, &regval);
 		if (status == HAL_OK) {
 			if (regval & PHY_LINK_INT_UP_OCCURRED) {
+				netif_set_up(&s_netif);
 				netif_set_link_up(&s_netif);
 			} else if (regval & PHY_LINK_INT_DOWN_OCCURED) {
+				netif_set_down(&s_netif);
 				netif_set_link_down(&s_netif);
 			} else {
 				/* No action */
 			}
 		}
 	}
+}
+
+static struct pbuf *low_level_input(struct netif *netif)
+{
+	(void)netif;
+	struct pbuf *p = NULL;
+
+	HAL_ETH_ReadData(&s_heth, (void **)&p);
+
+	return p;
+}
+
+static void ethernetif_input(void *const arg)
+{
+	err_t err;
+	(void)arg;
+	struct pbuf *p;
+
+	for ( ; ; ) {
+		vTaskDelay(5);
+		do {
+			/* move received packet into a new pbuf */
+			p = low_level_input(&s_netif);
+			if (p != NULL) {
+				/* entry point to the LwIP stack */
+				err = s_netif.input(p, &s_netif);
+				if (err != ERR_OK) {
+					pbuf_free(p);
+					p = NULL;
+				}
+			}
+		} while (p != NULL);
+	}
+}
+
+volatile int g_link;
+
+static void ethernet_link_updated(struct netif *netif)
+{
+	/* notify the user about the interface status change */
+	if (netif_is_up(netif)) {
+		g_link = 1;
+	} else {
+		g_link = 2;
+	}
+}
+
+#define ETH_DMA_TRANSMIT_TIMEOUT		( 20U )
+
+static err_t low_level_output(struct netif *netif, struct pbuf *p)
+{
+	(void)netif;
+	uint32_t i = 0U;
+	struct pbuf *q = NULL;
+	err_t errval = ERR_OK;
+	ETH_BufferTypeDef Txbuffer[ETH_TX_DESC_CNT] = { 0 };
+
+	memset(Txbuffer, 0 , ETH_TX_DESC_CNT * sizeof(ETH_BufferTypeDef));
+
+	for(q = p; q != NULL; q = q->next) {
+		if(i >= ETH_TX_DESC_CNT) {
+			return ERR_IF;
+		}
+
+		Txbuffer[i].buffer = q->payload;
+		Txbuffer[i].len = q->len;
+
+		if(i>0) {
+			Txbuffer[i-1].next = &Txbuffer[i];
+		}
+
+		if(q->next == NULL) {
+			Txbuffer[i].next = NULL;
+		}
+
+		i++;
+	}
+
+	TxConfig.Length = p->tot_len;
+	TxConfig.TxBuffer = Txbuffer;
+	TxConfig.pData = p;
+
+	HAL_ETH_Transmit(&s_heth, &TxConfig, ETH_DMA_TRANSMIT_TIMEOUT);
+
+	return errval;
+}
+
+static err_t ethernetif_init(struct netif *netif)
+{
+	LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+#if LWIP_NETIF_HOSTNAME
+	/* Initialize interface hostname */
+	netif->hostname = "lwip";
+#endif /* LWIP_NETIF_HOSTNAME */
+
+	/*
+	* Initialize the snmp variables and counters inside the struct netif.
+	* The last argument should be replaced with your link speed, in units
+	* of bits per second.
+	*/
+	// MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+
+	netif->name[0] = 'P';
+	netif->name[1] = 'v';
+	/* We directly use etharp_output() here to save a function call.
+	* You can instead declare your own function an call etharp_output()
+	* from it if you have to do some checks before sending (e.g. if link
+	* is available...) */
+
+#if LWIP_IPV4
+#if LWIP_ARP || LWIP_ETHERNET
+#if LWIP_ARP
+	netif->output = etharp_output;
+#else
+	/* The user should write its own code in low_level_output_arp_off function */
+	netif->output = low_level_output_arp_off;
+#endif /* LWIP_ARP */
+#endif /* LWIP_ARP || LWIP_ETHERNET */
+#endif /* LWIP_IPV4 */
+
+#if LWIP_IPV6
+	netif->output_ip6 = ethip6_output;
+#endif /* LWIP_IPV6 */
+
+	netif->linkoutput = low_level_output;
+
+	/* initialize the hardware */
+	// low_level_init(netif);
+
+	return ERR_OK;
 }
 
 static void init_task(void *arg)
@@ -252,14 +392,51 @@ static void init_task(void *arg)
 	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 
 	(void)HAL_RNG_Init(&rng_handle);
+
+	TxConfig.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
+	TxConfig.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
+	TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
+
 	/* Create TCP/IP stack thread */
+	/* Initilialize the LwIP stack with RTOS */
 	tcpip_init(NULL, NULL);
 
+	/* IP addresses initialization with DHCP (IPv4) */
+	s_ipaddr.addr = 0;
+	s_netmask.addr = 0;
+	s_gw.addr = 0;
+	/* add the network interface (IPv4/IPv6) with RTOS */
+	/* The application must add the network interface to lwIP list of network interfaces
+	(netifs in lwIP parlance) by calling netif_add(), which takes the interface initialization function */
+	netif_add(&s_netif, &s_ipaddr, &s_netmask, &s_gw, NULL, &ethernetif_init, &tcpip_input);
+
+	/* Registers the default network interface */
+	netif_set_default(&s_netif);
+
+	/* Set the link callback function, this function is called on change of link status */
+	/* The application should register a function that will be called when interface is brought up
+	or down via netif_set_status_callback(). Application can use this callback to notify the user
+	about the interface status change. */
+	netif_set_link_callback(&s_netif, ethernet_link_updated);
+
+	/* Bring up the net interface by calling netif_set_up() with default netif pointer */
+	if (netif_is_link_up(&s_netif)) {
+		/* When the netif is fully configured this function must be called */
+		netif_set_up(&s_netif);
+	} else {
+		/* When the netif link is down this function must be called */
+		netif_set_down(&s_netif);
+	}
+
 	xTaskCreate(link_state, "link_st", 128, NULL, 3, NULL);
+	xTaskCreate(ethernetif_input, "link_st", 128, NULL, 3, NULL);
+
+	/* Application can call dhcp_start() to start the DHCP negotiation */
+	/* Start DHCP negotiation for a network interface (IPv4) */
+	dhcp_start(&s_netif);
 
 	for ( ; ; ) {
 		vTaskDelay(600);
-		HAL_Delay(400);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 		static volatile char pcWriteBuffer[1024];

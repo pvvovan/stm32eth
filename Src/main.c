@@ -441,6 +441,12 @@ static void init_task(void *arg)
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 		static volatile char pcWriteBuffer[1024];
 		vTaskGetRunTimeStats((char *)&pcWriteBuffer[0]);
+
+		if (dhcp_supplied_address(&s_netif)) {
+			char str[128] = { 0 };
+			sprintf(str, "%s", inet_ntoa(s_netif.ip_addr));
+			str[127] = 0;
+		}
 	}
 }
 

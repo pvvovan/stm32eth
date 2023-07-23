@@ -513,8 +513,7 @@ void SysTick_Handler(void)
 
 void HAL_ETH_RxAllocateCallback(uint8_t **buff)
 {
-	// struct pbuf *pbuf_alloc(pbuf_layer l, u16_t length, pbuf_type type);
-	*buff = (uint8_t *)pbuf_alloc(PBUF_RAW, 2000, PBUF_POOL);
+	*buff = (uint8_t *)pbuf_alloc(PBUF_RAW, ETH_RX_BUF_SIZE, PBUF_POOL);
 }
 
 void tim2_init(void)

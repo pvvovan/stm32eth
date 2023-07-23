@@ -152,6 +152,9 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 	/* Enable Peripheral clock */
 	__HAL_RCC_ETH_CLK_ENABLE();
+	__HAL_RCC_ETHMAC_CLK_ENABLE();
+	__HAL_RCC_ETHMACTX_CLK_ENABLE();
+	__HAL_RCC_ETHMACRX_CLK_ENABLE();
 
 	/* ETH GPIO Configuration
 		PC1      ------> ETH_MDC
@@ -246,9 +249,8 @@ static struct pbuf *low_level_input(struct netif *netif)
 
 static void ethernetif_input(void *const arg)
 {
-	err_t err;
 	(void)arg;
-	struct pbuf *p;
+	struct pbuf *p = NULL;
 
 	for ( ; ; ) {
 		vTaskDelay(5);
@@ -257,7 +259,7 @@ static void ethernetif_input(void *const arg)
 			p = low_level_input(&s_netif);
 			if (p != NULL) {
 				/* entry point to the LwIP stack */
-				err = s_netif.input(p, &s_netif);
+				err_t err = s_netif.input(p, &s_netif);
 				if (err != ERR_OK) {
 					pbuf_free(p);
 					p = NULL;
@@ -289,19 +291,19 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	err_t errval = ERR_OK;
 	ETH_BufferTypeDef Txbuffer[ETH_TX_DESC_CNT] = { 0 };
 
-	for(q = p; q != NULL; q = q->next) {
-		if(i >= ETH_TX_DESC_CNT) {
+	for (q = p; q != NULL; q = q->next) {
+		if (i >= ETH_TX_DESC_CNT) {
 			return ERR_IF;
 		}
 
 		Txbuffer[i].buffer = q->payload;
 		Txbuffer[i].len = q->len;
 
-		if(i>0) {
+		if (i>0) {
 			Txbuffer[i-1].next = &Txbuffer[i];
 		}
 
-		if(q->next == NULL) {
+		if (q->next == NULL) {
 			Txbuffer[i].next = NULL;
 		}
 
@@ -487,7 +489,8 @@ static void init_task(void *arg)
 
 int main()
 {
-	__asm volatile ("bkpt #0" : : : "memory");
+	/* Software break point */
+	// __asm volatile ("bkpt #0" : : : "memory");
 
 	HAL_Init();
 

@@ -11,7 +11,6 @@
 #include "netif/ethernet.h"
 #include "lwip/etharp.h"
 #include "lwip/dhcp.h"
-#include <string.h>
 
 
 static RNG_HandleTypeDef rng_handle;
@@ -238,7 +237,9 @@ static struct pbuf *low_level_input(struct netif *netif)
 	(void)netif;
 	struct pbuf *p = NULL;
 
-	HAL_ETH_ReadData(&s_heth, (void **)&p);
+	if (HAL_ETH_ReadData(&s_heth, (void **)&p) != HAL_OK) {
+		return NULL;
+	}
 
 	return p;
 }
@@ -288,8 +289,6 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	err_t errval = ERR_OK;
 	ETH_BufferTypeDef Txbuffer[ETH_TX_DESC_CNT] = { 0 };
 
-	memset(Txbuffer, 0 , ETH_TX_DESC_CNT * sizeof(ETH_BufferTypeDef));
-
 	for(q = p; q != NULL; q = q->next) {
 		if(i >= ETH_TX_DESC_CNT) {
 			return ERR_IF;
@@ -313,9 +312,38 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 	TxConfig.TxBuffer = Txbuffer;
 	TxConfig.pData = p;
 
-	HAL_ETH_Transmit(&s_heth, &TxConfig, ETH_DMA_TRANSMIT_TIMEOUT);
+	HAL_StatusTypeDef err_hal = HAL_ETH_Transmit(&s_heth, &TxConfig, ETH_DMA_TRANSMIT_TIMEOUT);
+	if (err_hal != HAL_OK) {
+		errval = ERR_IF;
+	}
 
 	return errval;
+}
+
+static void low_level_init(struct netif *netif)
+{
+	netif->flags |= NETIF_FLAG_LINK_UP;
+
+	/* set MAC hardware address length */
+	netif->hwaddr_len = ETHARP_HWADDR_LEN;
+
+	/* set MAC hardware address */
+	netif->hwaddr[0] = MAC_ADDR0;
+	netif->hwaddr[1] = MAC_ADDR1;
+	netif->hwaddr[2] = MAC_ADDR2;
+	netif->hwaddr[3] = MAC_ADDR3;
+	netif->hwaddr[4] = MAC_ADDR4;
+	netif->hwaddr[5] = MAC_ADDR5;
+
+	/* maximum transfer unit */
+	netif->mtu = 1500;
+
+	/* device capabilities */
+	/* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
+	netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
+
+	/* Enable MAC and DMA transmission and reception */
+	HAL_ETH_Start(&s_heth);
 }
 
 static err_t ethernetif_init(struct netif *netif)
@@ -359,7 +387,7 @@ static err_t ethernetif_init(struct netif *netif)
 	netif->linkoutput = low_level_output;
 
 	/* initialize the hardware */
-	// low_level_init(netif);
+	low_level_init(netif);
 
 	return ERR_OK;
 }
@@ -402,9 +430,9 @@ static void init_task(void *arg)
 	tcpip_init(NULL, NULL);
 
 	/* IP addresses initialization with DHCP (IPv4) */
-	s_ipaddr.addr = 0;
-	s_netmask.addr = 0;
-	s_gw.addr = 0;
+	ip_addr_set_zero_ip4(&s_ipaddr);
+	ip_addr_set_zero_ip4(&s_netmask);
+	ip_addr_set_zero_ip4(&s_gw);
 	/* add the network interface (IPv4/IPv6) with RTOS */
 	/* The application must add the network interface to lwIP list of network interfaces
 	(netifs in lwIP parlance) by calling netif_add(), which takes the interface initialization function */

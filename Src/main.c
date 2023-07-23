@@ -395,7 +395,14 @@ static err_t ethernetif_init(struct netif *netif)
 static void init_task(void *arg)
 {
 	(void)arg;
-	static uint8_t MACAddr[6] = { 0x00, 0x80, 0xE1, 0x00, 0x00, 0x00 };
+	static uint8_t MACAddr[6] = {
+		MAC_ADDR0,
+		MAC_ADDR1,
+		MAC_ADDR2,
+		MAC_ADDR3,
+		MAC_ADDR4,
+		MAC_ADDR5
+	};
 	static ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
 	static ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT]; /* Ethernet Tx DMA Descriptors */
 

@@ -504,7 +504,8 @@ static void init_task(void *arg)
 		if (dhcp_supplied_address(&s_netif)) {
 			char str[128] = { 0 };
 			sprintf(str, "%s", inet_ntoa(s_netif.ip_addr));
-			str[127] = 0;
+			char *pstr = &str[0];
+			pstr[127] = 0;
 		}
 	}
 }
@@ -512,7 +513,7 @@ static void init_task(void *arg)
 int main()
 {
 	/* Software break point */
-	// __asm volatile ("bkpt #0" : : : "memory");
+	__asm volatile ("bkpt #0" : : : "memory");
 
 	HAL_Init();
 

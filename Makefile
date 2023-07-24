@@ -2,6 +2,7 @@ TARGET = f407disc1
 DEBUG = 1
 
 BUILD_DIR = build
+LWIPBUILD_DIR = $(BUILD_DIR)/lwIPbuild
 
 C_SOURCES = \
 Src/main.c \
@@ -88,7 +89,7 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 LDSCRIPT = Src/STM32F407VGTx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm -LlwIPbuild -llwipcore
+LIBS = -lc -lm -L$(LWIPBUILD_DIR) -llwipcore
 LDFLAGS = --specs=nano.specs $(MCU) -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
@@ -111,7 +112,8 @@ $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(ASFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) FORCE
+	./buildlwip.sh $(LWIPBUILD_DIR)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -124,6 +126,9 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir $@
 
+
+.PHOHY:
+FORCE:
 
 #######################################
 # clean up

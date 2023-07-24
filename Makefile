@@ -56,8 +56,8 @@ AS_DEFS =
 
 # C defines
 C_DEFS = \
--DUSE_HAL_DRIVER \
--DSTM32F407xx
+-D USE_HAL_DRIVER \
+-D STM32F407xx
 
 # AS includes
 AS_INCLUDES =

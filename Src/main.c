@@ -260,8 +260,11 @@ static struct pbuf *low_level_input(struct netif *netif)
 	(void)netif;
 	struct pbuf *p = NULL;
 
-	if (HAL_ETH_ReadData(&s_heth, (void **)&p) != HAL_OK) {
-		return NULL;
+	__asm volatile ("dmb" : : : "memory");
+	if (RxAllocStatus == RX_ALLOC_OK) {
+		if (HAL_ETH_ReadData(&s_heth, (void **)&p) != HAL_OK) {
+			p = NULL;
+		}
 	}
 
 	return p;
@@ -541,8 +544,10 @@ static void pbuf_free_custom(struct pbuf *p)
 
 	/* If the Rx Buffer Pool was exhausted, signal the ethernetif_input task to
 	* call HAL_ETH_GetRxDataBuffer to rebuild the Rx descriptors. */
+	__asm volatile ("dmb" : : : "memory");
 	if (RxAllocStatus == RX_ALLOC_ERROR) {
 		RxAllocStatus = RX_ALLOC_OK;
+		__asm volatile ("dmb" : : : "memory");
 	}
 }
 
@@ -559,6 +564,7 @@ void HAL_ETH_RxAllocateCallback(uint8_t **buff)
 		pbuf_alloced_custom(PBUF_RAW, 0, PBUF_REF, p, *buff, ETH_RX_BUF_SIZE);
 	} else {
 		RxAllocStatus = RX_ALLOC_ERROR;
+		__asm volatile ("dmb" : : : "memory");
 		*buff = NULL;
 	}
 }

@@ -273,7 +273,7 @@ static void ethernetif_input(void *const arg)
 	struct pbuf *p = NULL;
 
 	for ( ; ; ) {
-		vTaskDelay(5);
+		vTaskDelay(2);
 		do {
 			/* move received packet into a new pbuf */
 			p = low_level_input(&s_netif);
@@ -290,7 +290,6 @@ static void ethernetif_input(void *const arg)
 }
 
 volatile int g_link;
-
 static void ethernet_link_updated(struct netif *netif)
 {
 	/* notify the user about the interface status change */
@@ -319,7 +318,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 		Txbuffer[i].buffer = q->payload;
 		Txbuffer[i].len = q->len;
 
-		if (i>0) {
+		if (i > 0) {
 			Txbuffer[i-1].next = &Txbuffer[i];
 		}
 
@@ -513,7 +512,7 @@ static void init_task(void *arg)
 int main()
 {
 	/* Software break point */
-	__asm volatile ("bkpt #0" : : : "memory");
+	// __asm volatile ("bkpt #0" : : : "memory");
 
 	HAL_Init();
 

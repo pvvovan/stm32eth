@@ -113,7 +113,8 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(ASFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) FORCE
-	./buildlwip.sh $(LWIPBUILD_DIR)
+	cmake -B $(LWIPBUILD_DIR) -S ./
+	$(MAKE) -C $(LWIPBUILD_DIR)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 

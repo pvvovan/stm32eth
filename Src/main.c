@@ -11,7 +11,25 @@
 #include "netif/ethernet.h"
 #include "lwip/etharp.h"
 #include "lwip/dhcp.h"
+#include "lwip/memp.h"
+#include "lwip/pbuf.h"
 
+
+typedef struct
+{
+	struct pbuf_custom pbuf_custom;
+	uint8_t buff[(ETH_RX_BUF_SIZE + 31) & ~31] __ALIGNED(32);
+} RxBuff_t;
+
+typedef enum
+{
+	RX_ALLOC_OK		= 0x00,
+	RX_ALLOC_ERROR		= 0x01
+} RxAllocStatusTypeDef;
+
+/* Memory Pool Declaration */
+#define ETH_RX_BUFFER_CNT		12U
+LWIP_MEMPOOL_DECLARE(RX_POOL, ETH_RX_BUFFER_CNT, sizeof(RxBuff_t), "Zero-copy RX PBUF pool")
 
 static RNG_HandleTypeDef rng_handle;
 static ETH_HandleTypeDef s_heth;
@@ -20,6 +38,8 @@ static struct netif s_netif;
 static ip4_addr_t s_ipaddr;
 static ip4_addr_t s_netmask;
 static ip4_addr_t s_gw;
+static uint8_t RxAllocStatus;
+
 
 uint32_t rand_wrapper(void)
 {
@@ -408,6 +428,8 @@ static void init_task(void *arg)
 	static ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
 	static ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT]; /* Ethernet Tx DMA Descriptors */
 
+	LWIP_MEMPOOL_INIT(RX_POOL);
+
 	s_heth.Instance = ETH;
 	s_heth.Init.MACAddr = &MACAddr[0];
 	s_heth.Init.MediaInterface = HAL_ETH_RMII_MODE;
@@ -511,9 +533,63 @@ void SysTick_Handler(void)
 	HAL_IncTick();
 }
 
+
+static void pbuf_free_custom(struct pbuf *p)
+{
+	struct pbuf_custom* custom_pbuf = (struct pbuf_custom*)p;
+	LWIP_MEMPOOL_FREE(RX_POOL, custom_pbuf);
+
+	/* If the Rx Buffer Pool was exhausted, signal the ethernetif_input task to
+	* call HAL_ETH_GetRxDataBuffer to rebuild the Rx descriptors. */
+	if (RxAllocStatus == RX_ALLOC_ERROR) {
+		RxAllocStatus = RX_ALLOC_OK;
+	}
+}
+
 void HAL_ETH_RxAllocateCallback(uint8_t **buff)
 {
-	*buff = (uint8_t *)pbuf_alloc(PBUF_RAW, ETH_RX_BUF_SIZE, PBUF_POOL);
+	struct pbuf_custom *p = LWIP_MEMPOOL_ALLOC(RX_POOL);
+	if (p) {
+		/* Get the buff from the struct pbuf address. */
+		*buff = (uint8_t *)p + offsetof(RxBuff_t, buff);
+		p->custom_free_function = pbuf_free_custom;
+		/* Initialize the struct pbuf.
+		* This must be performed whenever a buffer's allocated because it may be
+		* changed by lwIP or the app, e.g., pbuf_free decrements ref. */
+		pbuf_alloced_custom(PBUF_RAW, 0, PBUF_REF, p, *buff, ETH_RX_BUF_SIZE);
+	} else {
+		RxAllocStatus = RX_ALLOC_ERROR;
+		*buff = NULL;
+	}
+}
+
+void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t Length)
+{
+	struct pbuf **ppStart = (struct pbuf **)pStart;
+	struct pbuf **ppEnd = (struct pbuf **)pEnd;
+	struct pbuf *p = NULL;
+
+	/* Get the struct pbuf from the buff address. */
+	p = (struct pbuf *)(buff - offsetof(RxBuff_t, buff));
+	p->next = NULL;
+	p->tot_len = 0;
+	p->len = Length;
+
+	/* Chain the buffer. */
+	if (!*ppStart) {
+		/* The first buffer of the packet. */
+		*ppStart = p;
+	} else {
+		/* Chain the buffer to the end of the packet. */
+		(*ppEnd)->next = p;
+	}
+	*ppEnd  = p;
+
+	/* Update the total length of all the buffers of the chain. Each pbuf in the chain should have its tot_len
+	* set to its own length, plus the length of all the following pbufs in the chain. */
+	for (p = *ppStart; p != NULL; p = p->next) {
+		p->tot_len += Length;
+	}
 }
 
 void tim2_init(void)

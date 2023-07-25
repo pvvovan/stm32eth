@@ -1,18 +1,22 @@
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_rng.h"
+
 #include "hw_delay.h"
+#include "error_handler.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
-#include "stm32f4xx_hal_rng.h"
+
 #include "lwip/init.h"
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
 #include "lwip/inet.h"
 #include "lwip/tcpip.h"
-#include "netif/ethernet.h"
 #include "lwip/etharp.h"
 #include "lwip/dhcp.h"
 #include "lwip/memp.h"
 #include "lwip/pbuf.h"
+#include "netif/ethernet.h"
 
 
 typedef struct
@@ -48,12 +52,6 @@ uint32_t rand_wrapper(void)
 	(void)HAL_RNG_GenerateRandomNumber(&rng_handle, &random);
 
 	return random;
-}
-
-static void Error_Handler(void)
-{
-	__disable_irq();
-	while (1) { }
 }
 
 static void SystemClock_Config(void)
@@ -616,24 +614,4 @@ void tim2_init(void)
 uint32_t tim2_cnt(void)
 {
 	return TIM2->CNT;
-}
-
-void HardFault_Handler(void)
-{
-	while (1) { }
-}
-
-void MemManage_Handler(void)
-{
-	while (1) { }
-}
-
-void BusFault_Handler(void)
-{
-	while (1) { }
-}
-
-void UsageFault_Handler(void)
-{
-	while (1) { }
 }

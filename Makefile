@@ -90,7 +90,7 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 LDSCRIPT = Src/STM32F407VGTx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm -L$(LWIPBUILD_DIR) -llwipcore
+LIBS = -lc -lm -L$(LWIPBUILD_DIR) -llwipcore -lerrtrap
 LDFLAGS = --specs=nano.specs $(MCU) -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all

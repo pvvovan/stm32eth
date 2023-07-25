@@ -66,6 +66,9 @@ static void SystemClock_Config(void)
 }
 
 volatile int g_link;
+volatile char *g_ip;
+volatile char *g_cpu;
+
 static void ethernet_link_updated(struct netif *netif)
 {
 	/* notify the user about the interface status change */
@@ -177,24 +180,26 @@ static void init_task(void *arg)
 	}
 
 	xTaskCreate(link_state, "link_st", 128, NULL, 3, NULL);
-	xTaskCreate(ethernetif_input, "ethif_input", 128, NULL, 3, NULL);
+	xTaskCreate(ethernetif_input, "ethif_in", 128, NULL, 3, NULL);
 
 	/* Application can call dhcp_start() to start the DHCP negotiation */
 	/* Start DHCP negotiation for a network interface (IPv4) */
 	dhcp_start(&s_netif);
 
 	for ( ; ; ) {
-		vTaskDelay(600);
+		vTaskDelay(500);
 		led_toggle();
 
-		static volatile char pcWriteBuffer[1024];
+		static char pcWriteBuffer[1024];
 		vTaskGetRunTimeStats((char *)&pcWriteBuffer[0]);
+		g_cpu = &pcWriteBuffer[0];
+		g_cpu[1023] = 0;
 
 		if (dhcp_supplied_address(&s_netif)) {
-			char str[128] = { 0 };
-			sprintf(str, "%s", inet_ntoa(s_netif.ip_addr));
-			char *pstr = &str[0];
-			pstr[127] = 0;
+			static char str[128] = { 0 };
+			snprintf(str, sizeof(str), "%s", inet_ntoa(s_netif.ip_addr));
+			g_ip = &str[0];
+			g_ip[127] = 0;
 		}
 	}
 }

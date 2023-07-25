@@ -391,7 +391,7 @@ void ethmac_init(void)
 	HAL_ETH_Init(&s_heth);
 }
 
-enum list_t ethphy_getlink(void)
+enum link_status ethphy_getlink(void)
 {
 	uint32_t regval = 0;
 	HAL_StatusTypeDef status = HAL_ETH_ReadPHYRegister(&s_heth, 0, PHY_INTERRUPT_STATUS, &regval);

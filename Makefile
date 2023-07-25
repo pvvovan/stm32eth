@@ -9,6 +9,7 @@ Src/main.c \
 Src/sys_arch.c \
 Src/syscalls.c \
 Src/sysmem.c \
+Src/ethif.c \
 cmsis_device_f4/Source/Templates/system_stm32f4xx.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal.c \
 stm32f4xx_hal_driver/Src/stm32f4xx_hal_cortex.c \

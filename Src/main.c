@@ -38,9 +38,8 @@ static void SystemClock_Config(void)
 	__HAL_RCC_PWR_CLK_ENABLE();
 	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-	/** Initializes the RCC Oscillators according to the specified parameters
-	 * in the RCC_OscInitTypeDef structure.
-	 */
+	/* Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure. */
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -155,8 +154,8 @@ static void init_task(void *arg)
 	ip_addr_set_zero_ip4(&s_netmask);
 	ip_addr_set_zero_ip4(&s_gw);
 	/* add the network interface (IPv4/IPv6) with RTOS */
-	/* The application must add the network interface to lwIP list of network interfaces
-	(netifs in lwIP parlance) by calling netif_add(), which takes the interface initialization function */
+	/* The application must add the network interface to lwIP list of network interfaces (netifs
+	 in lwIP parlance) by calling netif_add(), which takes the interface initialization function */
 	netif_add(&s_netif, &s_ipaddr, &s_netmask, &s_gw, NULL, &ethernetif_init, &tcpip_input);
 
 	/* Registers the default network interface */
@@ -164,8 +163,8 @@ static void init_task(void *arg)
 
 	/* Set the link callback function, this function is called on change of link status */
 	/* The application should register a function that will be called when interface is brought up
-	or down via netif_set_status_callback(). Application can use this callback to notify the user
-	about the interface status change. */
+	 or down via netif_set_status_callback(). Application can use this callback to notify the user
+	 about the interface status change. */
 	netif_set_link_callback(&s_netif, ethernet_link_updated);
 
 	/* Bring up the net interface by calling netif_set_up() with default netif pointer */

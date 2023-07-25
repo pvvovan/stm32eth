@@ -12,7 +12,7 @@
 #include "ethif.h"
 
 
-#define ETH_DMA_TRANSMIT_TIMEOUT		( 20U )
+#define ETH_DMA_TRANSMIT_TIMEOUT		20U
 
 typedef struct
 {
@@ -39,8 +39,8 @@ static ETH_TxPacketConfig TxConfig;
 #define RMII_PHY_RST_PIN			GPIO_PIN_10
 #define RMII_CSR_DV_PORT			GPIOA
 #define RMII_CSR_DV_PIN				GPIO_PIN_7
-#define KSZ8081_RESET_ASSERT_DELAY_US		(500)
-#define KSZ8081_BOOTUP_DELAY_US			(100)
+#define KSZ8081_RESET_ASSERT_DELAY_US		500
+#define KSZ8081_BOOTUP_DELAY_US			100
 
 static void ksz8081_bootstrap(void)
 {
@@ -77,7 +77,7 @@ static void ksz8081_bootstrap(void)
 }
 
 
-/* PHY Registers */
+/* PHY registers */
 #define PHY_BASIC_CONTROL			((uint16_t)0x0000)
 #define PHY_BASIC_STATUS			((uint16_t)0x0001)
 #define PHY_IDENTIFIER1				((uint16_t)0x0002)
@@ -100,7 +100,7 @@ static void ksz8081_bootstrap(void)
 #define PHY_CONTROL1				((uint16_t)0x001E)
 #define PHY_CONTROL2				((uint16_t)0x001F)
 
-/* PHY Masks */
+/* PHY masks */
 #define PHY_REF_CLOCK_SELECT_MASK		((uint16_t)0x0080)
 #define PHY_REF_CLOCK_SELECT_25MHZ		((uint16_t)0x0080)
 #define PHY_LINK_INT_UP_OCCURRED		((uint16_t)0x0001)
@@ -268,11 +268,9 @@ err_t ethernetif_init(struct netif *netif)
 	netif->hostname = "lwip";
 #endif /* LWIP_NETIF_HOSTNAME */
 
-	/*
-	 * Initialize the snmp variables and counters inside the struct netif.
+	/* Initialize the snmp variables and counters inside the struct netif.
 	 * The last argument should be replaced with your link speed, in units
-	 * of bits per second.
-	 */
+	 * of bits per second. */
 	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 100000000L);
 
 	netif->name[0] = 'P';
@@ -313,7 +311,7 @@ static void pbuf_free_custom(struct pbuf *p)
 	LWIP_MEMPOOL_FREE(RX_POOL, custom_pbuf);
 
 	/* If the Rx Buffer Pool was exhausted, signal the ethernetif_input task to
-	* call HAL_ETH_GetRxDataBuffer to rebuild the Rx descriptors. */
+	 * call HAL_ETH_GetRxDataBuffer to rebuild the Rx descriptors. */
 	__asm volatile ("dmb" : : : "memory");
 	if (RxAllocStatus == RX_ALLOC_ERROR) {
 		RxAllocStatus = RX_ALLOC_OK;
@@ -328,6 +326,7 @@ void HAL_ETH_RxAllocateCallback(uint8_t **buff)
 		/* Get the buff from the struct pbuf address. */
 		*buff = (uint8_t *)p + offsetof(RxBuff_t, buff);
 		p->custom_free_function = pbuf_free_custom;
+
 		/* Initialize the struct pbuf.
 		 * This must be performed whenever a buffer's allocated because it may be
 		 * changed by lwIP or the app, e.g., pbuf_free decrements ref. */

@@ -80,10 +80,10 @@ OPT = -O2 -g0
 endif
 
 COMMON_FLAGS = -Wall -Wextra -fdata-sections -ffunction-sections
-C_STD = -std=c99
+CSTD = -std=c99 -Wpedantic
 
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(COMMON_FLAGS)
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wconversion -Wsign-conversion -Wpedantic $(C_STD) $(COMMON_FLAGS)
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(CSTD) $(COMMON_FLAGS) -Wsign-conversion -Wconversion
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
@@ -115,7 +115,7 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(ASFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) FORCE
-	cmake -B $(LWIPBUILD_DIR) -S ./ -DCMAKE_C_FLAGS="$(MCU) $(OPT) $(COMMON_FLAGS) $(C_STD)" -DCMAKE_C_COMPILER=$(CC)
+	cmake -B $(LWIPBUILD_DIR) -S ./ -DCMAKE_C_FLAGS="$(MCU) $(OPT) $(COMMON_FLAGS) $(CSTD)" -DCMAKE_C_COMPILER=$(CC)
 	$(MAKE) -C $(LWIPBUILD_DIR)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@

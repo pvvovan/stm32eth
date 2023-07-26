@@ -83,7 +83,7 @@ static void link_state(void *const arg)
 {
 	(void)arg;
 	for ( ; ; ) {
-		vTaskDelay(10);
+		vTaskDelay(100);
 		enum link_status link = ethphy_getlink();
 		if (link == LINK_UP) {
 			netif_set_up(&s_netif);

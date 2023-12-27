@@ -52,27 +52,27 @@ BSP/lan8742/lan8742.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
-./LwIP/src/core/tcp.c \
-./LwIP/src/core/tcp_out.c \
-./LwIP/src/core/pbuf.c \
-./LwIP/src/core/mem.c \
-./LwIP/src/core/memp.c \
-./LwIP/src/core/def.c \
-./LwIP/src/core/ipv4/ip4.c \
-./LwIP/src/core/ipv4/ip4_addr.c \
-./LwIP/src/core/netif.c \
-./LwIP/src/core/ipv4/ip4_frag.c \
-./LwIP/src/core/tcp_in.c \
-./LwIP/src/core/ipv4/dhcp.c \
-./LwIP/src/core/ipv4/etharp.c \
-./LwIP/src/core/ip.c \
-./LwIP/src/core/init.c \
-./LwIP/src/core/timeouts.c \
-./LwIP/src/core/udp.c \
-./LwIP/src/core/ipv4/icmp.c \
-./LwIP/src/core/inet_chksum.c \
-./LwIP/src/core/ipv4/acd.c \
-./LwIP/src/netif/ethernet.c
+lwip/src/core/def.c \
+lwip/src/core/inet_chksum.c \
+lwip/src/core/init.c \
+lwip/src/core/ip.c \
+lwip/src/core/ipv4/acd.c \
+lwip/src/core/ipv4/dhcp.c \
+lwip/src/core/ipv4/etharp.c \
+lwip/src/core/ipv4/icmp.c \
+lwip/src/core/ipv4/ip4.c \
+lwip/src/core/ipv4/ip4_addr.c \
+lwip/src/core/ipv4/ip4_frag.c \
+lwip/src/core/memp.c \
+lwip/src/core/mem.c \
+lwip/src/core/netif.c \
+lwip/src/core/pbuf.c \
+lwip/src/core/tcp.c \
+lwip/src/core/tcp_in.c \
+lwip/src/core/tcp_out.c \
+lwip/src/core/timeouts.c \
+lwip/src/core/udp.c \
+lwip/src/netif/ethernet.c
 
 
 # ASM sources
@@ -131,8 +131,8 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES = \
 -I Inc \
--I ./LwIP/src/include \
--I ./LwIP/system \
+-I lwip/src/include \
+-I lwip/system \
 -I ./STM32H7xx_HAL_Driver/Inc \
 -I ./cmsis_device_h7/Include \
 -I ./CMSIS_6/CMSIS/Core/Include \

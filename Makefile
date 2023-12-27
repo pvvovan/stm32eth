@@ -46,12 +46,12 @@ Src/system_stm32h7xx.c \
 Src/tcp_echoserver.c \
 BSP/STM32H7xx_Nucleo/stm32h7xx_nucleo.c \
 BSP/lan8742/lan8742.c \
-./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c \
-./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c \
-./STM32H7xx_HAL_Driver/Src/Legacy/stm32h7xx_hal_eth.c \
-./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c \
-./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c \
-./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
+stm32h7xx_hal_driver/Src/stm32h7xx_hal.c \
+stm32h7xx_hal_driver/Src/stm32h7xx_hal_cortex.c \
+stm32h7xx_hal_driver/Src/Legacy/stm32h7xx_hal_eth.c \
+stm32h7xx_hal_driver/Src/stm32h7xx_hal_gpio.c \
+stm32h7xx_hal_driver/Src/stm32h7xx_hal_pwr_ex.c \
+stm32h7xx_hal_driver/Src/stm32h7xx_hal_rcc.c \
 lwip/src/core/def.c \
 lwip/src/core/inet_chksum.c \
 lwip/src/core/init.c \
@@ -133,7 +133,7 @@ C_INCLUDES = \
 -I Inc \
 -I lwip/src/include \
 -I lwip/system \
--I ./STM32H7xx_HAL_Driver/Inc \
+-I stm32h7xx_hal_driver/Inc \
 -I ./cmsis_device_h7/Include \
 -I ./CMSIS_6/CMSIS/Core/Include \
 -I BSP/STM32H7xx_Nucleo \

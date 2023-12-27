@@ -4,8 +4,8 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = ORIGIN(DTCMRAM) + LENGTH(DTCMRAM);
 
-_Min_Heap_Size = 0x1000;  /* required amount of heap  */
-_Min_Stack_Size = 0x1000; /* required amount of stack */
+_Min_Heap_Size =  16 * 1024; /* required amount of heap  */
+_Min_Stack_Size = 16 * 1024; /* required amount of stack */
 
 MEMORY
 {

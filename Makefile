@@ -36,14 +36,14 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES = \
-./Src/app_ethernet.c \
-./Src/ethernetif.c \
-./Src/main.c \
-./Src/stm32h7xx_it.c \
-./Src/syscalls.c \
-./Src/sysmem.c \
-./Src/system_stm32h7xx.c \
-./Src/tcp_echoserver.c \
+Src/app_ethernet.c \
+Src/ethernetif.c \
+Src/main.c \
+Src/stm32h7xx_it.c \
+Src/syscalls.c \
+Src/sysmem.c \
+Src/system_stm32h7xx.c \
+Src/tcp_echoserver.c \
 ./BSP/STM32H7xx_Nucleo/stm32h7xx_nucleo.c \
 ./BSP/lan8742/lan8742.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c \
@@ -130,7 +130,7 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES = \
--I ./Inc \
+-I Inc \
 -I ./LwIP/src/include \
 -I ./LwIP/system \
 -I ./STM32H7xx_HAL_Driver/Inc \
@@ -164,7 +164,7 @@ LDSCRIPT = STM32H723ZGTX_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys -specs=nano.specs
-LDFLAGS = $(MCU) -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = $(MCU) -T $(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin

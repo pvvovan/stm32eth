@@ -44,8 +44,8 @@ Src/syscalls.c \
 Src/sysmem.c \
 Src/system_stm32h7xx.c \
 Src/tcp_echoserver.c \
-./BSP/STM32H7xx_Nucleo/stm32h7xx_nucleo.c \
-./BSP/lan8742/lan8742.c \
+BSP/STM32H7xx_Nucleo/stm32h7xx_nucleo.c \
+BSP/lan8742/lan8742.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c \
 ./STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c \
 ./STM32H7xx_HAL_Driver/Src/Legacy/stm32h7xx_hal_eth.c \
@@ -65,14 +65,14 @@ Src/tcp_echoserver.c \
 ./LwIP/src/core/tcp_in.c \
 ./LwIP/src/core/ipv4/dhcp.c \
 ./LwIP/src/core/ipv4/etharp.c \
-./LwIP/src/netif/ethernet.c \
 ./LwIP/src/core/ip.c \
 ./LwIP/src/core/init.c \
 ./LwIP/src/core/timeouts.c \
 ./LwIP/src/core/udp.c \
 ./LwIP/src/core/ipv4/icmp.c \
 ./LwIP/src/core/inet_chksum.c \
-./LwIP/src/core/ipv4/acd.c
+./LwIP/src/core/ipv4/acd.c \
+./LwIP/src/netif/ethernet.c
 
 
 # ASM sources
@@ -136,8 +136,8 @@ C_INCLUDES = \
 -I ./STM32H7xx_HAL_Driver/Inc \
 -I ./cmsis_device_h7/Include \
 -I ./CMSIS_6/CMSIS/Core/Include \
--I ./BSP/STM32H7xx_Nucleo \
--I ./BSP/lan8742
+-I BSP/STM32H7xx_Nucleo \
+-I BSP/lan8742
 
 
 WARN = -Wall -Wextra -Wpedantic

@@ -134,7 +134,7 @@ C_INCLUDES = \
 -I lwip/src/include \
 -I lwip/system \
 -I stm32h7xx_hal_driver/Inc \
--I ./cmsis_device_h7/Include \
+-I cmsis_device_h7/Include \
 -I ./CMSIS_6/CMSIS/Core/Include \
 -I BSP/STM32H7xx_Nucleo \
 -I BSP/lan8742

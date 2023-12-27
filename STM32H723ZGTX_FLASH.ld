@@ -80,12 +80,12 @@ SECTIONS
   } > ROM
 
   .ARM.extab :
-  { 
+  {
     . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(4);
   } > ROM
-  
+
   .ARM :
   {
     . = ALIGN(4);
@@ -108,7 +108,7 @@ SECTIONS
   _sidata = LOADADDR(.data);
 
   /* Initialized data sections into "RAM" Ram type memory */
-  .data : 
+  .data :
   {
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
@@ -117,7 +117,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-    
+
   } > RAM AT > ROM
 
   /* Uninitialized data section into "RAM" Ram type memory */
@@ -149,16 +149,11 @@ SECTIONS
 
   .lwip_sec (NOLOAD) :
   {
-    . = ABSOLUTE(0x30000000);
-    *(.RxDecripSection) 
-    
-    . = ABSOLUTE(0x30000200);
+    *(.RxDecripSection)
+    . = ALIGN(32);
     *(.TxDecripSection)
-    
-    . = ABSOLUTE(0x30000400);
-    *(.Rx_PoolSection) 
   } > RAM_D2 AT > ROM
-  
+
   /* Remove information from the compiler libraries */
   /DISCARD/ :
   {

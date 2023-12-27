@@ -86,25 +86,13 @@ __attribute__((section(".TxDecripSection"))) ETH_DMADescTypeDef  DMATxDscrTab[ET
 
 #elif defined ( __GNUC__ ) /* GNU Compiler */
 
-ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT] __attribute__((section(".RxDecripSection"))); /* Ethernet Rx DMA Descriptors */
-ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT] __attribute__((section(".TxDecripSection")));   /* Ethernet Tx DMA Descriptors */
+ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT] __attribute__((section(".RxDecripSection"))) = { { .DESC1 = 19 } };
+ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT] __attribute__((section(".TxDecripSection"))) = { { .DESC1 = 19 } };
 
 #endif
 
 /* Memory Pool Declaration */
 LWIP_MEMPOOL_DECLARE(RX_POOL, ETH_RX_BUFFER_CNT, sizeof(RxBuff_t), "Zero-copy RX PBUF pool")
-
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
-#pragma location = 0x30000400
-extern u8_t memp_memory_RX_POOL_base[];
-
-#elif defined ( __CC_ARM )  /* MDK ARM Compiler */
-__attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
-
-#elif defined ( __GNUC__ ) /* GNU Compiler */
-__attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
-
-#endif
 
 /* Variable Definitions */
 static uint8_t RxAllocStatus;

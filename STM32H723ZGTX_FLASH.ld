@@ -11,7 +11,8 @@ MEMORY
 {
   DTCMRAM     (rw)    : ORIGIN = 0x20000000, LENGTH =  128K
   FLASH       (rx)    : ORIGIN = 0x08000000, LENGTH = 1024K
-  RAM_D2      (rw)    : ORIGIN = 0x30000000, LENGTH =   32K
+  SRAM1_D2    (rw)    : ORIGIN = 0x30000000, LENGTH =   16K
+  SRAM2_D2    (rw)    : ORIGIN = 0x30004000, LENGTH =   16K
 }
 
 SECTIONS
@@ -121,9 +122,9 @@ SECTIONS
   .ethdma (NOLOAD) :
   {
     *(.RxDecripSection)
-    . = ALIGN(1024);
+    . = ALIGN(0x2000);
     *(.TxDecripSection)
-  } > RAM_D2
+  } > SRAM1_D2
 
   /* Remove information from the compiler libraries */
   /DISCARD/ :

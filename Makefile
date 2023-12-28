@@ -20,7 +20,7 @@ TARGET = h723tcp
 # building variables
 ######################################
 # debug build?
-DEBUG = 1
+DEBUG = 0
 
 # optimization
 ifeq ($(DEBUG), 1)

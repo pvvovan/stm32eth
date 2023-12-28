@@ -21,9 +21,13 @@ TARGET = h723tcp
 ######################################
 # debug build?
 DEBUG = 1
-# optimization
-OPT = -O0
 
+# optimization
+ifeq ($(DEBUG), 1)
+OPT = -g3 -gdwarf-5 -O0
+else
+OPT = -g0 -O2
+endif
 
 #######################################
 # paths
@@ -144,13 +148,7 @@ WARN = -Wall -Wextra -Wpedantic
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(WARN) -fdata-sections -ffunction-sections
-
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(WARN) -std=c99 -fdata-sections -ffunction-sections
-
-ifeq ($(DEBUG), 1)
-CFLAGS += -g3 -gdwarf-5
-endif
-
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"

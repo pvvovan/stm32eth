@@ -9,8 +9,9 @@ _Min_Stack_Size = 16 * 1024; /* required amount of stack */
 
 MEMORY
 {
-  DTCMRAM     (rw)    : ORIGIN = 0x20000000, LENGTH =  128K
   FLASH       (rx)    : ORIGIN = 0x08000000, LENGTH = 1024K
+  DTCMRAM     (rw)    : ORIGIN = 0x20000000, LENGTH =  128K
+  AXISRAM     (rw)    : ORIGIN = 0x24000000, LENGTH =  128K
   SRAM1_D2    (rw)    : ORIGIN = 0x30000000, LENGTH =   16K
   SRAM2_D2    (rw)    : ORIGIN = 0x30004000, LENGTH =   16K
 }
@@ -34,12 +35,9 @@ SECTIONS
     *(.glue_7)         /* glue arm to thumb code */
     *(.glue_7t)        /* glue thumb to arm code */
     *(.eh_frame)
-
     KEEP (*(.init))
     KEEP (*(.fini))
-
     . = ALIGN(4);
-    _etext = .;        /* define a global symbols at end of code */
   } > FLASH
 
   /* Constant data into "FLASH" type memory */
@@ -97,14 +95,14 @@ SECTIONS
   .bss :
   {
     /* This is used by the startup in order to initialize the .bss section */
-    _sbss = .;         /* define a global symbol at bss start */
+    _sbss = .; /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
     *(.bss*)
     *(COMMON)
 
     . = ALIGN(4);
-    _ebss = .;         /* define a global symbol at bss end */
+    _ebss = .; /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } > DTCMRAM
 
@@ -136,7 +134,6 @@ SECTIONS
     *(.init_array*)
     *(.fini_array.*)
     *(.fini_array*)
+    *(.ARM.attributes)
   }
-
-  .ARM.attributes 0 : { *(.ARM.attributes) }
 }

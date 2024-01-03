@@ -1,57 +1,23 @@
-/**
-  ******************************************************************************
-  * @file    LwIP/LwIP_TCP_Echo_Server/Src/main.c
-  * @author  MCD Application Team
-  * @brief   This sample code implements a http server application based on LwIP
-  *          Raw API of LwIP stack. This application uses the STM32Cube ETH HAL
-  *          API to transmit and receive data.
-  *          The communication is done with a web browser of a remote PC.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-
-/* Includes ------------------------------------------------------------------*/
 #include "lwip/opt.h"
 #include "lwip/init.h"
 #include "netif/etharp.h"
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
-#if LWIP_DHCP
-#include "lwip/dhcp.h"
-#endif
 #include "ethernetif.h"
 #include "main.h"
 #include "app_ethernet.h"
 #include "tcp_echoserver.h"
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+
 struct netif gnetif;
-/* Private function prototypes -----------------------------------------------*/
+
 static void SystemClock_Config(void);
 static void BSP_Config(void);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
 
-/* Private functions ---------------------------------------------------------*/
 
-/**
-  * @brief  Main program
-  * @param  None
-  * @retval None
-  */
 int main(void)
 {
   /* Configure the MPU attributes as Device memory for ETH DMA descriptors */
@@ -61,10 +27,10 @@ int main(void)
   CPU_CACHE_Enable();
 
   /* STM32H7xx HAL library initialization:
-       - Configure the SysTick to generate an interrupt each 1 msec
-       - Set NVIC Group Priority to 4
-       - Low Level Initialization
-     */
+    - Configure the SysTick to generate an interrupt each 1 msec
+    - Set NVIC Group Priority to 4
+    - Low Level Initialization
+  */
   HAL_Init();
 
   /* Configure the system clock to 520 MHz */
@@ -83,8 +49,7 @@ int main(void)
   tcp_echoserver_init();
 
   /* Infinite loop */
-  while (1)
-  {
+  for ( ; ; ) {
     /* Read a received packet from the Ethernet buffers and send it
        to the lwIP for handling */
     ethernetif_input(&gnetif);
@@ -106,7 +71,6 @@ static void BSP_Config(void)
 {
   BSP_LED_Init(LED2);
   BSP_LED_Init(LED3);
-
 }
 
 /**
@@ -136,7 +100,7 @@ static void Netif_Config(void)
   /* add the network interface */
   netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &ethernet_input);
 
-  /*  Registers the default network interface */
+  /* Registers the default network interface */
   netif_set_default(&gnetif);
 
   ethernet_link_status_updated(&gnetif);
@@ -179,12 +143,12 @@ static void SystemClock_Config(void)
 
   /* The voltage scaling allows optimizing the power consumption when the device is
      clocked below the maximum system frequency, to update the voltage scaling value
-     regarding system frequency refer to product datasheet.  */
+     regarding system frequency refer to product datasheet. */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
-  /* Enable D2 domain SRAM1 Clock (0x30000000 AXI)*/
+  /* Enable D2 domain SRAM1 Clock (0x30000000 AXI) */
   __HAL_RCC_D2SRAM1_CLK_ENABLE();
 
   /* Enable HSE Oscillator and activate PLL with HSE as source */
@@ -299,6 +263,20 @@ static void MPU_Config(void)
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
+  /* AXISRAM */
+  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+  MPU_InitStruct.BaseAddress = 0x24000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+  MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+  MPU_InitStruct.SubRegionDisable = 0x00;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
   /* Enable the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
@@ -317,7 +295,7 @@ static void CPU_CACHE_Enable(void)
   SCB_EnableDCache();
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number

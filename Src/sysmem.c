@@ -18,13 +18,13 @@ static uint8_t *__sbrk_heap_end = &_end;
  * @param incr Memory size
  * @return Pointer to allocated memory
  */
-void *_sbrk(ptrdiff_t incr)
+void *_sbrk(intptr_t incr)
 {
-  extern uint8_t const *const _max_heap;
+  extern uint8_t *_max_heap;
   uint8_t *prev_heap_end;
 
   /* Protect heap from out of memory region */
-  if ((__sbrk_heap_end + incr) >= _max_heap) {
+  if ((__sbrk_heap_end + incr) >= (uint8_t *)&_max_heap) {
     errno = ENOMEM;
     return (void *)-1;
   }

@@ -2,12 +2,12 @@
 #include <stdint.h>
 
 
-extern uint8_t _end; /* Symbol defined in the linker script */
+extern void *_end[]; /* Symbol defined in the linker script */
 
 /**
  * Pointer to the current high watermark of the heap usage
  */
-static uint8_t *__sbrk_heap_end = &_end;
+static uint8_t *__sbrk_heap_end = (uint8_t *)&_end;
 
 /**
  * @brief _sbrk() allocates memory to the newlib heap and is used by malloc
@@ -20,7 +20,7 @@ static uint8_t *__sbrk_heap_end = &_end;
  */
 void *_sbrk(intptr_t incr)
 {
-  extern uint8_t *_max_heap;
+  extern void *_max_heap[];
   uint8_t *prev_heap_end;
 
   /* Protect heap from out of memory region */

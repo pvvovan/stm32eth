@@ -13,7 +13,11 @@
             "runToEntryPoint": "main",
             "servertype": "stlink",
             "gdbPath": "gdb-multiarch",
-            "svdFile": "STM32H723.svd"
+            "svdFile": "STM32H723.svd",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
         }
     ]
 }
